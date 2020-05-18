@@ -51,6 +51,15 @@ public final class StewardConfig {
         validate();
     }
 
+    StewardConfig() {
+        this.dryRun = false;
+        this.updateSummary = false;
+        this.updateDescription = false;
+        this.updateLabels = false;
+        this.prioritizeUp = false;
+        this.prioritizeDown = false;
+    }
+
     public static StewardConfig getConfig() {
         StewardConfig config = StewardConfigBuilder.buildConfig();
         if (config == null) {

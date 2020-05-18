@@ -55,10 +55,13 @@ class StewardConfigBuilder {
                     configJson = readFromFile(new File(configURI));
                 }
             }
-            if (configJson == null || configJson.isEmpty()) {
-                throw new StewardException("Please provide a valid config file or URL");
+            StewardConfig config = null;
+            if (configJson != null && !configJson.isEmpty()) {
+                config = gson.fromJson(configJson, StewardConfig.class);
             }
-            StewardConfig config = gson.fromJson(configJson, StewardConfig.class);
+            if (config == null) {
+                config = new StewardConfig();
+            }
             backFillFromEnv(config);
             config.validate();
             return config;
