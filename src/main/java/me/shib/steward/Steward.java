@@ -12,14 +12,14 @@ public final class Steward {
     private final Trakr tracker;
     private final StewardData data;
 
-    private Steward(StewardData data, StewardConfig config) throws TrakrException {
+    private Steward(StewardData data, StewardConfig config) throws StewardException {
         this.stewardProcess = new StewardProcess();
         this.data = data;
         this.config = config;
         this.tracker = getContextTracker();
     }
 
-    public static StewardProcess process(StewardData data, StewardConfig config) throws TrakrException {
+    public static StewardProcess process(StewardData data, StewardConfig config) throws StewardException {
         System.out.println("Findings Identified in " + data.getProject() + " [" +
                 data.getConnector() + "]: " + data.getFindings().size());
         Steward steward = new Steward(data, config);
@@ -28,21 +28,25 @@ public final class Steward {
         return steward.stewardProcess;
     }
 
-    private Trakr getContextTracker() throws TrakrException {
-        TrakrQuery query = new TrakrQuery();
-        query.add(TrakrQuery.Condition.project, TrakrQuery.Operator.matching, config.getProjectKey());
-        query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
-        query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getConnector());
-        for (String key : data.getContexts()) {
-            query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, key);
+    private Trakr getContextTracker() throws StewardException {
+        try {
+            TrakrQuery query = new TrakrQuery();
+            query.add(TrakrQuery.Condition.project, TrakrQuery.Operator.matching, config.getProjectKey());
+            query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
+            query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getConnector());
+            for (String key : data.getContexts()) {
+                query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, key);
+            }
+            Trakr trakr = Trakr.getTrakr(config.getTrackerName(), config.getConnection(),
+                    config.getPriorityMap());
+            trakr = new ContextTrakr(trakr, query);
+            if (config.isDryRun()) {
+                trakr = new DummyTrakr(trakr);
+            }
+            return trakr;
+        } catch (TrakrException e) {
+            throw new StewardException(e);
         }
-        Trakr trakr = Trakr.getTrakr(config.getTrackerName(), config.getConnection(),
-                config.getPriorityMap());
-        trakr = new ContextTrakr(trakr, query);
-        if (config.isDryRun()) {
-            trakr = new DummyTrakr(trakr);
-        }
-        return trakr;
     }
 
     private void createTrakrIssueForBug(StewardFinding finding) throws TrakrException {
@@ -269,34 +273,38 @@ public final class Steward {
         }
     }
 
-    private void verifyExistingNonClosedIssues() throws TrakrException {
-        if (config.isClosingAllowed()) {
-            System.out.println("\nVerifying if any existing issues are fixed...");
-            TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
-            searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
-            searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getConnector());
-            for (String context : data.getContexts()) {
-                searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, context);
-            }
-            searchQuery.add(TrakrQuery.Condition.status, TrakrQuery.Operator.not_matching, config.getClosedStatuses());
-            List<TrakrIssue> issues = tracker.searchTrakrIssues(searchQuery);
-            int count = 0;
-            for (TrakrIssue issue : issues) {
-                try {
-                    if (!isVulnerabilityExists(issue, data.getFindings())) {
-                        count++;
-                        if (!closeIssue(issue)) {
-                            System.out.println(issue.getKey() + ": No action taken now.");
+    private void verifyExistingNonClosedIssues() throws StewardException {
+        try {
+            if (config.isClosingAllowed()) {
+                System.out.println("\nVerifying if any existing issues are fixed...");
+                TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
+                searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
+                searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getConnector());
+                for (String context : data.getContexts()) {
+                    searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, context);
+                }
+                searchQuery.add(TrakrQuery.Condition.status, TrakrQuery.Operator.not_matching, config.getClosedStatuses());
+                List<TrakrIssue> issues = tracker.searchTrakrIssues(searchQuery);
+                int count = 0;
+                for (TrakrIssue issue : issues) {
+                    try {
+                        if (!isVulnerabilityExists(issue, data.getFindings())) {
+                            count++;
+                            if (!closeIssue(issue)) {
+                                System.out.println(issue.getKey() + ": No action taken now.");
+                            }
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        stewardProcess.addException(e);
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    stewardProcess.addException(e);
+                }
+                if (count == 0) {
+                    System.out.println("No relevant issues found to resolve/close.");
                 }
             }
-            if (count == 0) {
-                System.out.println("No relevant issues found to resolve/close.");
-            }
+        } catch (TrakrException e) {
+            throw new StewardException(e);
         }
     }
 
