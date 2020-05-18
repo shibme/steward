@@ -1,11 +1,10 @@
 package me.shib.steward;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class StewardData {
+
+    private static final transient String stewardLabel = "Steward";
 
     private final String project;
     private final String connector;
@@ -17,6 +16,7 @@ public final class StewardData {
         this.project = project;
         this.connector = connector;
         this.contexts = new LinkedHashSet<>();
+        this.addContext(stewardLabel);
         this.tags = new LinkedHashSet<>();
         this.findings = new ArrayList<>();
     }
@@ -25,17 +25,21 @@ public final class StewardData {
         this.contexts.add(context);
     }
 
+    public void addContexts(Collection<String> contexts) {
+        this.contexts.addAll(contexts);
+    }
+
     public void addTag(String tag) {
         this.tags.add(tag);
     }
 
+    public void addTags(Collection<String> tags) {
+        this.tags.addAll(tags);
+    }
+
     public void addFinding(StewardFinding finding) {
-        for (String context : contexts) {
-            finding.addContext(context);
-        }
-        for (String tag : tags) {
-            finding.addTag(tag);
-        }
+        finding.addContexts(contexts);
+        finding.addTags(tags);
         this.findings.add(finding);
     }
 

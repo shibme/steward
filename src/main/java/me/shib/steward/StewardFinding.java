@@ -2,6 +2,7 @@ package me.shib.steward;
 
 import me.shib.lib.trakr.TrakrPriority;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -24,8 +25,16 @@ public final class StewardFinding {
         this.contexts.add(context);
     }
 
+    public void addContexts(Collection<String> contexts) {
+        this.contexts.addAll(contexts);
+    }
+
     public void addTag(String tag) {
         this.tags.add(tag);
+    }
+
+    public void addTags(Collection<String> tags) {
+        this.tags.addAll(tags);
     }
 
     String getTitle() {
