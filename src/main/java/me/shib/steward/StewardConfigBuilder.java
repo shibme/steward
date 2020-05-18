@@ -110,7 +110,7 @@ class StewardConfigBuilder {
         config.setPriorityMap(priorityMap);
         String trackerName = StewardEnvar.STEWARD_TRACKER_NAME.getAsString();
         try {
-            Trakr.Type type = Trakr.Type.valueOf(trackerName);
+            Trakr.Type type = Trakr.Type.valueOf(trackerName.toUpperCase());
             config.setTrackerName(type);
         } catch (Exception ignored) {
         }
