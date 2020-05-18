@@ -14,17 +14,17 @@ public final class StewardConfig {
     static transient final String closingNotificationComment = "Closing this issue after verification.";
     static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
 
-    private final String project;
-    private final String issueType;
-    private final Map<String, TrakrPriority> priorityMap;
-    private final Trakr.Type trackerType;
-    private final Trakr.Connection connection;
-    private boolean readOnly;
+    private String projectKey;
+    private String issueType;
+    private Map<TrakrPriority, String> priorityMap;
+    private Trakr.Type trackerName;
+    private Trakr.Connection connection;
+    private boolean dryRun;
     private boolean updateSummary;
     private boolean updateDescription;
     private boolean updateLabels;
-    private boolean prioritize;
-    private boolean dePrioritize;
+    private boolean prioritizeUp;
+    private boolean prioritizeDown;
     private String assignee;
     private HashMap<String, List<String>> transitions;
     private String reOpenStatus;
@@ -35,14 +35,47 @@ public final class StewardConfig {
     private Changes autoReopen;
     private Changes autoResolve;
 
-    public StewardConfig(String project, String issueType, Map<String, TrakrPriority> priorityMap,
-                         Trakr.Type trackerType, Trakr.Connection connection) {
-        this.project = project;
+    public StewardConfig(String projectKey, String issueType, Map<TrakrPriority, String> priorityMap,
+                         Trakr.Type trackerName, Trakr.Connection connection) throws StewardException {
+        this.projectKey = projectKey;
         this.issueType = issueType;
         this.priorityMap = priorityMap;
-        this.trackerType = trackerType;
+        this.trackerName = trackerName;
         this.connection = connection;
-        this.readOnly = false;
+        this.dryRun = false;
+        this.updateSummary = false;
+        this.updateDescription = false;
+        this.updateLabels = false;
+        this.prioritizeUp = false;
+        this.prioritizeDown = false;
+        validate();
+    }
+
+    public static StewardConfig getConfig() {
+        StewardConfig config = StewardConfigBuilder.buildConfig();
+        if (config == null) {
+            System.out.println("Please set the following environment variables.");
+            System.out.println(StewardEnvar.getVarDefinitions());
+        }
+        return null;
+    }
+
+    void validate() throws StewardException {
+        if (projectKey == null || projectKey.isEmpty()) {
+            throw new StewardException("A valid project key is required");
+        }
+        if (issueType == null || issueType.isEmpty()) {
+            throw new StewardException("A valid issue type is required");
+        }
+        if (priorityMap == null || priorityMap.isEmpty()) {
+            throw new StewardException("A valid priority mapping is required");
+        }
+        if (trackerName == null) {
+            throw new StewardException("A valid tracker name is required");
+        }
+        if (connection == null) {
+            throw new StewardException("A valid credential is required");
+        }
     }
 
     public void setTransitions(HashMap<String, List<String>> transitions) {
@@ -65,24 +98,39 @@ public final class StewardConfig {
         this.ignoreForStatuses = ignoreForStatuses;
     }
 
-    Trakr.Type getTrackerType() {
-        return trackerType;
+    Trakr.Type getTrackerName() {
+        return trackerName;
+    }
+
+    public void setTrackerName(Trakr.Type trackerName) {
+        this.trackerName = trackerName;
     }
 
     Trakr.Connection getConnection() {
         return connection;
     }
 
-    boolean isReadOnly() {
-        return readOnly;
+    public void setConnection(Trakr.Connection connection) {
+        this.connection = connection;
     }
 
-    public void setReadOnly(boolean readOnly) {
-        this.readOnly = readOnly;
+    boolean isDryRun() {
+        return dryRun;
     }
 
-    Map<String, TrakrPriority> getPriorityMap() {
+    public void setDryRun(boolean dryRun) {
+        this.dryRun = dryRun;
+    }
+
+    Map<TrakrPriority, String> getPriorityMap() {
+        if (priorityMap == null) {
+            priorityMap = new HashMap<>();
+        }
         return priorityMap;
+    }
+
+    public void setPriorityMap(Map<TrakrPriority, String> priorityMap) {
+        this.priorityMap = priorityMap;
     }
 
     Changes getAutoReopen() {
@@ -169,30 +217,30 @@ public final class StewardConfig {
         this.updateDescription = updateDescription;
     }
 
-    boolean isPrioritize() {
-        return this.prioritize;
+    boolean isPrioritizeUp() {
+        return this.prioritizeUp;
     }
 
-    public void setPrioritize(boolean prioritize) {
-        this.prioritize = prioritize;
+    public void setPrioritizeUp(boolean prioritizeUp) {
+        this.prioritizeUp = prioritizeUp;
     }
 
-    boolean isDePrioritize() {
-        return this.dePrioritize;
+    boolean isPrioritizeDown() {
+        return this.prioritizeDown;
     }
 
-    public void setDePrioritize(boolean dePrioritize) {
-        this.dePrioritize = dePrioritize;
+    public void setPrioritizeDown(boolean prioritizeDown) {
+        this.prioritizeDown = prioritizeDown;
     }
 
     boolean isClosingAllowed() {
         return autoResolve != null && transitions != null &&
-                (autoResolve.isMoveStatus() || autoResolve.isComment());
+                (autoResolve.isTransition() || autoResolve.isComment());
     }
 
     boolean isOpeningAllowedForStatus(String status) {
         if (autoReopen != null && transitions != null &&
-                (autoReopen.isMoveStatus() || autoReopen.isComment())) {
+                (autoReopen.isTransition() || autoReopen.isComment())) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
                     return true;
@@ -227,8 +275,12 @@ public final class StewardConfig {
         return false;
     }
 
-    String getProject() {
-        return project;
+    String getProjectKey() {
+        return projectKey;
+    }
+
+    public void setProjectKey(String projectKey) {
+        this.projectKey = projectKey;
     }
 
     String getAssignee() {
@@ -251,6 +303,10 @@ public final class StewardConfig {
         return issueType;
     }
 
+    public void setIssueType(String issueType) {
+        this.issueType = issueType;
+    }
+
     public boolean isUpdateLabels() {
         return updateLabels;
     }
@@ -264,12 +320,12 @@ public final class StewardConfig {
         private transient static final int defaultCommentInterval = 30;
         private transient static final long oneDay = 86400000;
 
-        private final boolean moveStatus;
-        private final boolean comment;
-        private final int commentInterval;
+        private boolean transition;
+        private boolean comment;
+        private int commentInterval;
 
-        public Changes(boolean moveStatus, boolean comment, int commentInterval) {
-            this.moveStatus = moveStatus;
+        public Changes(boolean transition, boolean comment, int commentInterval) {
+            this.transition = transition;
             this.comment = comment;
             if (commentInterval < 1) {
                 this.commentInterval = defaultCommentInterval;
@@ -278,12 +334,24 @@ public final class StewardConfig {
             }
         }
 
-        boolean isMoveStatus() {
-            return moveStatus;
+        void setCommentInterval(int commentInterval) {
+            this.commentInterval = commentInterval;
+        }
+
+        boolean isTransition() {
+            return transition;
+        }
+
+        void setTransition(boolean transition) {
+            this.transition = transition;
         }
 
         boolean isComment() {
             return comment;
+        }
+
+        void setComment(boolean comment) {
+            this.comment = comment;
         }
 
         boolean isCommentable(TrakrIssue issue, TrakrContent commentToAdd) throws TrakrException {
@@ -295,7 +363,8 @@ public final class StewardConfig {
                     }
                 }
                 long commentBeforeTime = new Date().getTime() - commentInterval * oneDay;
-                return (lastComment == null) || (lastComment.getUpdatedDate().getTime() < commentBeforeTime);
+                return (lastComment == null) || (commentInterval > 0 &&
+                        lastComment.getUpdatedDate().getTime() < commentBeforeTime);
             }
             return false;
         }

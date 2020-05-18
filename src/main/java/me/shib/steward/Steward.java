@@ -20,8 +20,8 @@ public final class Steward {
     }
 
     public static StewardProcess process(StewardData data, StewardConfig config) throws TrakrException {
-        System.out.println("Findings Identified in " + data.getProject() + " [" + data.getConnector() + "]: " +
-                data.getFindings().size());
+        System.out.println("Findings Identified in " + data.getProject() + " [" +
+                data.getConnector() + "]: " + data.getFindings().size());
         Steward steward = new Steward(data, config);
         steward.processFindings();
         steward.verifyExistingNonClosedIssues();
@@ -30,17 +30,17 @@ public final class Steward {
 
     private Trakr getContextTracker() throws TrakrException {
         TrakrQuery query = new TrakrQuery();
-        query.add(TrakrQuery.Condition.project, TrakrQuery.Operator.matching, config.getProject());
+        query.add(TrakrQuery.Condition.project, TrakrQuery.Operator.matching, config.getProjectKey());
         query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
         query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getConnector());
         for (String key : data.getContexts()) {
             query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, key);
         }
-        Trakr trakr = Trakr.getTrakr(config.getTrackerType(), config.getConnection(),
+        Trakr trakr = Trakr.getTrakr(config.getTrackerName(), config.getConnection(),
                 config.getPriorityMap());
-        trakr = new ContextTrakr(trakr, query, config.getConnection(), config.getPriorityMap());
-        if (config.isReadOnly()) {
-            trakr = new DummyTrakr(trakr, config.getConnection(), config.getPriorityMap());
+        trakr = new ContextTrakr(trakr, query);
+        if (config.isDryRun()) {
+            trakr = new DummyTrakr(trakr);
         }
         return trakr;
     }
@@ -53,7 +53,7 @@ public final class Steward {
         labels.addAll(data.getTags());
         labels.addAll(finding.getContexts());
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
-        issueBuilder.setProject(config.getProject());
+        issueBuilder.setProject(config.getProjectKey());
         issueBuilder.setTitle(finding.getTitle());
         issueBuilder.setIssueType(config.getIssueType());
         issueBuilder.setAssignee(config.getAssignee());
@@ -74,61 +74,61 @@ public final class Steward {
         return false;
     }
 
-    private void updateTrakrIssueForBug(TrakrIssue stewardIssue, StewardFinding stewardFinding) throws TrakrException {
-        if (config.isIssueIgnorable(stewardIssue)) {
-            System.out.println("Ignoring the issue: " + stewardIssue.getKey());
+    private void updateTrakrIssueForBug(TrakrIssue issue, StewardFinding finding) throws TrakrException {
+        if (config.isIssueIgnorable(issue)) {
+            System.out.println("Ignoring the issue: " + issue.getKey());
         }
         boolean issueUpdated = false;
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
-        issueBuilder.setProject(config.getProject());
-        if (stewardIssue.getAssignee() == null && config.getAssignee() != null) {
+        issueBuilder.setProject(config.getProjectKey());
+        if (issue.getAssignee() == null && config.getAssignee() != null) {
             issueBuilder.setAssignee(config.getAssignee());
             issueUpdated = true;
         }
-        if (config.isUpdateSummary() && !stewardIssue.getTitle().contentEquals(stewardFinding.getTitle())) {
-            issueBuilder.setTitle(stewardFinding.getTitle());
+        if (config.isUpdateSummary() && !issue.getTitle().contentEquals(finding.getTitle())) {
+            issueBuilder.setTitle(finding.getTitle());
             issueUpdated = true;
         }
         if (config.isUpdateDescription() &&
-                !tracker.areContentsMatching(new TrakrContent(stewardFinding.getDescription()),
-                        stewardIssue.getDescription())) {
-            issueBuilder.setDescription(new TrakrContent(stewardFinding.getDescription()));
+                !tracker.areContentsMatching(new TrakrContent(finding.getDescription()),
+                        issue.getDescription())) {
+            issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
             issueUpdated = true;
         }
         if (config.isUpdateLabels()) {
-            Set<String> updateSet = new HashSet<>(stewardIssue.getLabels());
-            for (String labelFromBug : stewardFinding.getContexts()) {
+            Set<String> updateSet = new HashSet<>(issue.getLabels());
+            for (String labelFromBug : finding.getContexts()) {
                 if (!isLabelExsitingInSet(updateSet, labelFromBug)) {
                     updateSet.add(labelFromBug);
                 }
             }
-            if (updateSet.size() != stewardIssue.getLabels().size()) {
+            if (updateSet.size() != issue.getLabels().size()) {
                 issueBuilder.setLabels(new ArrayList<>(updateSet));
                 issueUpdated = true;
             }
         }
         StringBuilder comment = new StringBuilder();
-        if (((stewardIssue.getPriority().getRank() < stewardFinding.getPriority().getRank()) && (config.isPrioritize()))
-                || ((stewardIssue.getPriority().getRank() > stewardFinding.getPriority().getRank()) && (config.isDePrioritize()))) {
-            issueBuilder.setPriority(stewardFinding.getPriority());
-            System.out.println("Prioritizing " + stewardIssue.getKey() + " to " + tracker.getPriorityName(stewardFinding.getPriority()) + " based on actual priority.");
-            comment.append("Prioritizing to **").append(tracker.getPriorityName(stewardFinding.getPriority())).append("** based on actual priority.");
+        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeUp()))
+                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeDown()))) {
+            issueBuilder.setPriority(finding.getPriority());
+            System.out.println("Prioritizing " + issue.getKey() + " to " + tracker.getPriorityName(finding.getPriority()) + " based on actual priority.");
+            comment.append("Prioritizing to **").append(tracker.getPriorityName(finding.getPriority())).append("** based on actual priority.");
             issueUpdated = true;
         }
         if (issueUpdated) {
-            stewardIssue = tracker.updateIssue(stewardIssue, issueBuilder);
+            issue = tracker.updateIssue(issue, issueBuilder);
             if (!comment.toString().isEmpty()) {
-                stewardIssue.addComment(new TrakrContent(comment.toString()));
+                issue.addComment(new TrakrContent(comment.toString()));
             }
         }
-        if (config.isOpeningAllowedForStatus(stewardIssue.getStatus())) {
-            reopenIssue(stewardIssue);
+        if (config.isOpeningAllowedForStatus(issue.getStatus())) {
+            reopenIssue(issue);
         } else if (issueUpdated) {
-            System.out.println("Updated the issue: " + stewardIssue.getKey() + " - "
-                    + stewardIssue.getTitle());
+            System.out.println("Updated the issue: " + issue.getKey() + " - "
+                    + issue.getTitle());
         } else {
-            System.out.println("Issue up-to date: " + stewardIssue.getKey() + " - "
-                    + stewardIssue.getTitle());
+            System.out.println("Issue up-to date: " + issue.getKey() + " - "
+                    + issue.getTitle());
         }
     }
 
@@ -157,7 +157,7 @@ public final class Steward {
         System.out.println("Issue: " + issue.getKey() + " has been fixed.");
         boolean transitioned = false;
         String originalStatus = issue.getStatus();
-        if (config.getAutoResolve().isMoveStatus()) {
+        if (config.getAutoResolve().isTransition()) {
             List<String> transitions = config.getTransitionsToClose(issue.getStatus());
             System.out.println("Closing the issue " + issue.getKey() + ".");
             transitioned = transitionIssue(transitions, issue);
@@ -191,7 +191,7 @@ public final class Steward {
     private void reopenIssue(TrakrIssue issue) throws TrakrException {
         System.out.println("Issue: " + issue.getKey() + " was resolved, but not actually fixed.");
         boolean transitioned = false;
-        if (config.getAutoReopen().isMoveStatus()) {
+        if (config.getAutoReopen().isTransition()) {
             List<String> transitions = config.getTransitionsToOpen(issue.getStatus());
             System.out.println("Reopening the issue " + issue.getKey() + ":");
             transitioned = transitionIssue(transitions, issue);

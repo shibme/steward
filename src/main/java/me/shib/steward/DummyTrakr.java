@@ -4,16 +4,15 @@ import me.shib.lib.trakr.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public final class DummyTrakr extends Trakr {
 
     private final Trakr trakr;
 
-    DummyTrakr(Trakr trakr, Connection connection, Map<String, TrakrPriority> priorityMap) {
-        super(connection, priorityMap);
+    DummyTrakr(Trakr trakr) {
+        super(trakr.getConnection(), trakr.getPriorityMap());
         this.trakr = trakr;
-        System.out.println("Connecting to Trakr in read-only mode");
+        System.out.println("Dry-run enabled...");
     }
 
     @Override

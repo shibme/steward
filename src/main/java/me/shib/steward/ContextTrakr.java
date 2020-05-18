@@ -12,9 +12,8 @@ final class ContextTrakr extends Trakr {
     private final transient Trakr trakr;
     private final transient Map<String, TrakrIssue> contextIssueMap;
 
-    ContextTrakr(Trakr trakr, TrakrQuery contextQuery, Connection connection,
-                 Map<String, TrakrPriority> priorityMap) throws TrakrException {
-        super(connection, priorityMap);
+    ContextTrakr(Trakr trakr, TrakrQuery contextQuery) throws TrakrException {
+        super(trakr.getConnection(), trakr.getPriorityMap());
         this.trakr = trakr;
         this.contextIssueMap = new HashMap<>();
         for (TrakrIssue issue : trakr.searchTrakrIssues(contextQuery)) {
