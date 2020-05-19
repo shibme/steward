@@ -66,7 +66,7 @@ public final class StewardConfig {
             System.out.println("Please set the following environment variables.");
             System.out.println(StewardEnvar.getVarDefinitions());
         }
-        return null;
+        return config;
     }
 
     void validate() throws StewardException {
