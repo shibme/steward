@@ -4,19 +4,16 @@ import java.util.*;
 
 public final class StewardData {
 
-    private static final transient String stewardLabel = "Steward";
-
     private final String project;
-    private final String connector;
+    private final String toolName;
     private final Set<String> contexts;
     private final Set<String> tags;
     private final List<StewardFinding> findings;
 
-    public StewardData(String project, String connector) {
+    public StewardData(String project, String toolName) {
         this.project = project;
-        this.connector = connector;
+        this.toolName = toolName;
         this.contexts = new LinkedHashSet<>();
-        this.addContext(stewardLabel);
         this.tags = new LinkedHashSet<>();
         this.findings = new ArrayList<>();
     }
@@ -47,8 +44,8 @@ public final class StewardData {
         return project;
     }
 
-    String getConnector() {
-        return connector;
+    String getToolName() {
+        return toolName;
     }
 
     Set<String> getContexts() {
