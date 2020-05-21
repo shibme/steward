@@ -242,14 +242,31 @@ public final class StewardConfig {
         this.prioritizeDown = prioritizeDown;
     }
 
-    boolean isClosingAllowed() {
-        return autoResolve != null && transitions != null &&
-                (autoResolve.isTransition() || autoResolve.isComment());
+    boolean isAutoResolveAllowed() {
+        return autoResolve != null && transitions != null;
     }
 
-    boolean isOpeningAllowedForStatus(String status) {
-        if (autoReopen != null && transitions != null &&
-                (autoReopen.isTransition() || autoReopen.isComment())) {
+    boolean isAutoResolveAllowedForStatus(String status) {
+        boolean openStatus = true;
+        if (autoResolve != null && transitions != null) {
+            for (String s : resolvedStatuses) {
+                if (s.equalsIgnoreCase(status)) {
+                    openStatus = false;
+                    break;
+                }
+            }
+            for (String s : closedStatuses) {
+                if (s.equalsIgnoreCase(status)) {
+                    openStatus = false;
+                    break;
+                }
+            }
+        }
+        return openStatus;
+    }
+
+    boolean isReOpeningAllowedForStatus(String status) {
+        if (autoReopen != null && transitions != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
                     return true;
@@ -329,11 +346,13 @@ public final class StewardConfig {
         private transient static final int defaultCommentInterval = 30;
         private transient static final long oneDay = 86400000;
 
+        private int afterDays;
         private boolean transition;
         private boolean comment;
         private int commentInterval;
 
-        public Changes(boolean transition, boolean comment, int commentInterval) {
+        public Changes(int afterDays, boolean transition, boolean comment, int commentInterval) {
+            this.afterDays = 0;
             this.transition = transition;
             this.comment = comment;
             if (commentInterval < 1) {
@@ -343,20 +362,20 @@ public final class StewardConfig {
             }
         }
 
+        void setAfterDays(int afterDays) {
+            this.afterDays = afterDays;
+        }
+
         void setCommentInterval(int commentInterval) {
             this.commentInterval = commentInterval;
         }
 
-        boolean isTransition() {
-            return transition;
+        boolean isTransition(TrakrIssue issue) {
+            return transition && new Date().getTime() > (issue.getCreatedDate().getTime() + afterDays * oneDay);
         }
 
         void setTransition(boolean transition) {
             this.transition = transition;
-        }
-
-        boolean isComment() {
-            return comment;
         }
 
         void setComment(boolean comment) {
@@ -364,7 +383,7 @@ public final class StewardConfig {
         }
 
         boolean isCommentable(TrakrIssue issue, TrakrContent commentToAdd) throws TrakrException {
-            if (comment) {
+            if (comment && new Date().getTime() > (issue.getCreatedDate().getTime() + afterDays * oneDay)) {
                 TrakrComment lastComment = null;
                 for (TrakrComment comment : issue.getComments()) {
                     if (comment.getBody().toLowerCase().contains(commentToAdd.getMarkdownContent().toLowerCase())) {

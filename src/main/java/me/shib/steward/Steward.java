@@ -125,7 +125,7 @@ public final class Steward {
                 issue.addComment(new TrakrContent(comment.toString()));
             }
         }
-        if (config.isOpeningAllowedForStatus(issue.getStatus())) {
+        if (config.isReOpeningAllowedForStatus(issue.getStatus())) {
             reopenIssue(issue);
         } else if (issueUpdated) {
             System.out.println("Updated the issue: " + issue.getKey() + " - "
@@ -153,7 +153,7 @@ public final class Steward {
         return false;
     }
 
-    private boolean closeIssue(TrakrIssue issue) throws TrakrException {
+    private boolean resolveIssue(TrakrIssue issue) throws TrakrException {
         if (config.isIssueIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
             return false;
@@ -161,7 +161,7 @@ public final class Steward {
         System.out.println("Issue: " + issue.getKey() + " has been fixed.");
         boolean transitioned = false;
         String originalStatus = issue.getStatus();
-        if (config.getAutoResolve().isTransition()) {
+        if (config.getAutoResolve().isTransition(issue)) {
             List<String> transitions = config.getTransitionsToClose(issue.getStatus());
             System.out.println("Closing the issue " + issue.getKey() + ".");
             transitioned = transitionIssue(transitions, issue);
@@ -195,7 +195,7 @@ public final class Steward {
     private void reopenIssue(TrakrIssue issue) throws TrakrException {
         System.out.println("Issue: " + issue.getKey() + " was resolved, but not actually fixed.");
         boolean transitioned = false;
-        if (config.getAutoReopen().isTransition()) {
+        if (config.getAutoReopen().isTransition(issue)) {
             List<String> transitions = config.getTransitionsToOpen(issue.getStatus());
             System.out.println("Reopening the issue " + issue.getKey() + ":");
             transitioned = transitionIssue(transitions, issue);
@@ -275,7 +275,7 @@ public final class Steward {
 
     private void verifyExistingNonClosedIssues() throws StewardException {
         try {
-            if (config.isClosingAllowed()) {
+            if (config.isAutoResolveAllowed()) {
                 System.out.println("\nVerifying if any existing issues are fixed...");
                 TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
                 searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
@@ -287,16 +287,18 @@ public final class Steward {
                 List<TrakrIssue> issues = tracker.searchTrakrIssues(searchQuery);
                 int count = 0;
                 for (TrakrIssue issue : issues) {
-                    try {
-                        if (!isVulnerabilityExists(issue, data.getFindings())) {
-                            count++;
-                            if (!closeIssue(issue)) {
-                                System.out.println(issue.getKey() + ": No action taken now.");
+                    if (config.isAutoResolveAllowedForStatus(issue.getStatus())) {
+                        try {
+                            if (!isVulnerabilityExists(issue, data.getFindings())) {
+                                count++;
+                                if (!resolveIssue(issue)) {
+                                    System.out.println(issue.getKey() + ": No action taken now.");
+                                }
                             }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            stewardProcess.addException(e);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        stewardProcess.addException(e);
                     }
                 }
                 if (count == 0) {
