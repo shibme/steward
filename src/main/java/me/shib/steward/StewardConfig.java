@@ -26,7 +26,7 @@ public final class StewardConfig {
     private boolean prioritizeUp;
     private boolean prioritizeDown;
     private String assignee;
-    private HashMap<String, List<String>> transitions;
+    private HashMap<String, List<String>> workflow;
     private String reOpenStatus;
     private List<String> resolvedStatuses;
     private List<String> closedStatuses;
@@ -87,8 +87,8 @@ public final class StewardConfig {
         }
     }
 
-    public void setTransitions(HashMap<String, List<String>> transitions) {
-        this.transitions = transitions;
+    public void setWorkflow(HashMap<String, List<String>> workflow) {
+        this.workflow = workflow;
     }
 
     public void setReOpenStatus(String reOpenStatus) {
@@ -176,11 +176,11 @@ public final class StewardConfig {
             return path;
         }
         List<List<String>> temp = new ArrayList<>();
-        List<String> forwardStatuses = transitions.get(fromStatus);
+        List<String> forwardStatuses = workflow.get(fromStatus);
         if (forwardStatuses == null) {
             System.out.println("Unable to find transitions for status: " + fromStatus);
         }
-        for (String status : transitions.get(fromStatus)) {
+        for (String status : workflow.get(fromStatus)) {
             List<String> current = getTransitionPath(new ArrayList<>(path), status, toStatuses);
             if (current.size() > 0 && toStatuses.contains(current.get(current.size() - 1))) {
                 temp.add(current);
@@ -243,12 +243,12 @@ public final class StewardConfig {
     }
 
     boolean isAutoResolveAllowed() {
-        return autoResolve != null && transitions != null;
+        return autoResolve != null && workflow != null;
     }
 
     boolean isAutoResolveAllowedForStatus(String status) {
         boolean openStatus = true;
-        if (autoResolve != null && transitions != null) {
+        if (autoResolve != null && workflow != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
                     openStatus = false;
@@ -266,7 +266,7 @@ public final class StewardConfig {
     }
 
     boolean isReOpeningAllowedForStatus(String status) {
-        if (autoReopen != null && transitions != null) {
+        if (autoReopen != null && workflow != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
                     return true;
