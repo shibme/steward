@@ -19,13 +19,32 @@ public final class Steward {
         this.tracker = getContextTracker();
     }
 
-    public static StewardProcess process(StewardData data, StewardConfig config) throws StewardException {
-        System.out.println("Findings Identified in " + data.getProject() + " [" +
-                data.getToolName() + "]: " + data.getFindings().size());
-        Steward steward = new Steward(data, config);
-        steward.processFindings();
-        steward.verifyExistingNonClosedIssues();
-        return steward.stewardProcess;
+    public static void process(StewardData data, StewardConfig config) throws StewardException {
+        try {
+            System.out.println("Findings Identified in " + data.getProject() + " [" +
+                    data.getToolName() + "]: " + data.getFindings().size());
+            Steward steward = new Steward(data, config);
+            steward.processFindings();
+            steward.verifyExistingNonClosedIssues();
+            StewardProcess stewardProcess = steward.stewardProcess;
+            if (config != null) {
+                if (stewardProcess.exceptions.size() > 0 && config.getExitCodeOnFailure() != null) {
+                    System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
+                    System.exit(config.getExitCodeOnFailure());
+                } else if (stewardProcess.created > 0 && config.getExitCodeOnNewIssues() != null) {
+                    System.out.println("New issues found. Exiting (" + config.getExitCodeOnNewIssues() + ").");
+                    System.exit(config.getExitCodeOnNewIssues());
+                }
+            }
+        } catch (Exception e) {
+            if (config != null && config.getExitCodeOnFailure() != null) {
+                e.printStackTrace();
+                System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
+                System.exit(config.getExitCodeOnFailure());
+            } else {
+                throw new StewardException(e);
+            }
+        }
     }
 
     private Trakr getContextTracker() throws StewardException {

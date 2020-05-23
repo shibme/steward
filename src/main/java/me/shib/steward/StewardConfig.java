@@ -20,6 +20,8 @@ public final class StewardConfig {
     private Trakr.Type trackerName;
     private Trakr.Connection connection;
     private boolean dryRun;
+    private Integer exitCodeOnNewIssues;
+    private Integer exitCodeOnFailure;
     private boolean updateSummary;
     private boolean updateDescription;
     private boolean updateLabels;
@@ -37,17 +39,12 @@ public final class StewardConfig {
 
     public StewardConfig(String projectKey, String issueType, Map<TrakrPriority, String> priorityMap,
                          Trakr.Type trackerName, Trakr.Connection connection) throws StewardException {
+        this();
         this.projectKey = projectKey;
         this.issueType = issueType;
         this.priorityMap = priorityMap;
         this.trackerName = trackerName;
         this.connection = connection;
-        this.dryRun = false;
-        this.updateSummary = false;
-        this.updateDescription = false;
-        this.updateLabels = false;
-        this.prioritizeUp = false;
-        this.prioritizeDown = false;
         validate();
     }
 
@@ -69,6 +66,10 @@ public final class StewardConfig {
         return config;
     }
 
+    public static StewardConfig getConfig(String configURI) {
+        return StewardConfigBuilder.buildConfig(configURI);
+    }
+
     void validate() throws StewardException {
         if (projectKey == null || projectKey.isEmpty()) {
             throw new StewardException("A valid project key is required");
@@ -85,6 +86,22 @@ public final class StewardConfig {
         if (connection == null) {
             throw new StewardException("A valid credential is required");
         }
+    }
+
+    Integer getExitCodeOnNewIssues() {
+        return exitCodeOnNewIssues;
+    }
+
+    public void setExitCodeOnNewIssues(Integer exitCodeOnNewIssues) {
+        this.exitCodeOnNewIssues = exitCodeOnNewIssues;
+    }
+
+    Integer getExitCodeOnFailure() {
+        return exitCodeOnFailure;
+    }
+
+    public void setExitCodeOnFailure(Integer exitCodeOnFailure) {
+        this.exitCodeOnFailure = exitCodeOnFailure;
     }
 
     public void setWorkflow(HashMap<String, List<String>> workflow) {

@@ -8,13 +8,14 @@ import me.shib.lib.trakr.TrakrPriority;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 class StewardConfigBuilder {
 
     private static transient final Gson gson = new GsonBuilder().create();
-    private static transient StewardConfig config;
+    private static transient final Map<String, StewardConfig> configMap = new HashMap<>();
 
     private static String getConfigFromURL(String configURL) throws IOException {
         StringBuilder result = new StringBuilder();
@@ -44,37 +45,38 @@ class StewardConfigBuilder {
         return contentBuilder.toString();
     }
 
-    private static StewardConfig buildConfig(String configURI) {
+    static synchronized StewardConfig buildConfig(String configURI) {
         try {
-            String configJson = null;
             if (configURI != null && !configURI.isEmpty()) {
+                StewardConfig config = configMap.get(configURI);
+                if (config != null) {
+                    return config;
+                }
+                String configJson;
                 if (configURI.trim().toLowerCase().startsWith("http://") ||
                         configURI.trim().toLowerCase().startsWith("https://")) {
                     configJson = getConfigFromURL(configURI);
                 } else {
                     configJson = readFromFile(new File(configURI));
                 }
+                if (!configJson.isEmpty()) {
+                    config = gson.fromJson(configJson, StewardConfig.class);
+                }
+                if (config == null) {
+                    config = new StewardConfig();
+                }
+                backFillFromEnv(config);
+                config.validate();
+                configMap.put(configURI, config);
+                return config;
             }
-            StewardConfig config = null;
-            if (configJson != null && !configJson.isEmpty()) {
-                config = gson.fromJson(configJson, StewardConfig.class);
-            }
-            if (config == null) {
-                config = new StewardConfig();
-            }
-            backFillFromEnv(config);
-            config.validate();
-            return config;
-        } catch (Exception e) {
-            return null;
+        } catch (Exception ignored) {
         }
+        return null;
     }
 
-    static synchronized StewardConfig buildConfig() {
-        if (config == null) {
-            config = buildConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
-        }
-        return config;
+    static StewardConfig buildConfig() {
+        return buildConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
     }
 
     private static void backFillFromEnv(StewardConfig config) {
@@ -129,6 +131,14 @@ class StewardConfigBuilder {
         config.setConnection(connection);
         if (StewardEnvar.STEWARD_DRY_RUN.getAsBoolean()) {
             config.setDryRun(true);
+        }
+        Integer exitCodeOnNewIssues = StewardEnvar.STEWARD_EXIT_CODE_NEW_ISSUES.getAsInteger();
+        if (exitCodeOnNewIssues != null) {
+            config.setExitCodeOnNewIssues(exitCodeOnNewIssues);
+        }
+        Integer exitCodeOnFailure = StewardEnvar.STEWARD_EXIT_CODE_FAILURE.getAsInteger();
+        if (exitCodeOnFailure != null) {
+            config.setExitCodeOnFailure(exitCodeOnFailure);
         }
         if (StewardEnvar.STEWARD_UPDATE_SUMMARY.getAsBoolean()) {
             config.setUpdateSummary(true);
