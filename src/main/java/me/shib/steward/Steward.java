@@ -47,6 +47,10 @@ public final class Steward {
         }
     }
 
+    public static void process(StewardData data) throws StewardException {
+        process(data, StewardConfig.getConfig());
+    }
+
     private Trakr getContextTracker() throws StewardException {
         try {
             TrakrQuery query = new TrakrQuery();
