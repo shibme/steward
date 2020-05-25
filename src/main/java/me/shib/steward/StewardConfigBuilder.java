@@ -47,8 +47,9 @@ class StewardConfigBuilder {
 
     static synchronized StewardConfig buildConfig(String configURI) {
         try {
+            StewardConfig config = null;
             if (configURI != null && !configURI.isEmpty()) {
-                StewardConfig config = configMap.get(configURI);
+                config = configMap.get(configURI);
                 if (config != null) {
                     return config;
                 }
@@ -62,17 +63,23 @@ class StewardConfigBuilder {
                 if (!configJson.isEmpty()) {
                     config = gson.fromJson(configJson, StewardConfig.class);
                 }
-                if (config == null) {
-                    config = new StewardConfig();
+                if (config != null) {
+                    configMap.put(configURI, config);
+                    return config;
                 }
-                backFillFromEnv(config);
-                config.validate();
-                configMap.put(configURI, config);
+            }
+            config = configMap.get("");
+            if (config != null) {
                 return config;
             }
-        } catch (Exception ignored) {
+            config = new StewardConfig();
+            backFillFromEnv(config);
+            config.validate();
+            configMap.put("", config);
+            return config;
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     static StewardConfig buildConfig() {
