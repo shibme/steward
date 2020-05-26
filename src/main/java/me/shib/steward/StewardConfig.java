@@ -22,7 +22,7 @@ public final class StewardConfig {
     private boolean dryRun;
     private Integer exitCodeOnNewIssues;
     private Integer exitCodeOnFailure;
-    private boolean updateSummary;
+    private boolean updateTitle;
     private boolean updateDescription;
     private boolean updateLabels;
     private boolean prioritizeUp;
@@ -50,7 +50,7 @@ public final class StewardConfig {
 
     StewardConfig() {
         this.dryRun = false;
-        this.updateSummary = false;
+        this.updateTitle = false;
         this.updateDescription = false;
         this.updateLabels = false;
         this.prioritizeUp = false;
@@ -227,12 +227,12 @@ public final class StewardConfig {
         return getTransitionPath(new ArrayList<>(), currentStatus, closedStatuses);
     }
 
-    boolean isUpdateSummary() {
-        return this.updateSummary;
+    boolean isUpdateTitle() {
+        return this.updateTitle;
     }
 
-    public void setUpdateSummary(boolean updateSummary) {
-        this.updateSummary = updateSummary;
+    public void setUpdateTitle(boolean updateTitle) {
+        this.updateTitle = updateTitle;
     }
 
     boolean isUpdateDescription() {

@@ -20,7 +20,7 @@ enum StewardEnvar {
     STEWARD_DRY_RUN("Dry run [TRUE|FALSE]"),
     STEWARD_EXIT_CODE_NEW_ISSUES("Exit code when there are new issues"),
     STEWARD_EXIT_CODE_FAILURE("Exit code on error"),
-    STEWARD_UPDATE_SUMMARY("Update summary if changed [TRUE|FALSE]"),
+    STEWARD_UPDATE_TITLE("Update title if changed [TRUE|FALSE]"),
     STEWARD_UPDATE_DESCRIPTION("Update description if changed [TRUE|FALSE]"),
     STEWARD_UPDATE_LABELS("Update labels if changed [TRUE|FALSE]"),
     STEWARD_PRIORITIZE_UP("Prioritize up if lowered [TRUE|FALSE]"),

@@ -112,7 +112,7 @@ public final class Steward {
             issueBuilder.setAssignee(config.getAssignee());
             issueUpdated = true;
         }
-        if (config.isUpdateSummary() && !issue.getTitle().contentEquals(finding.getTitle())) {
+        if (config.isUpdateTitle() && !issue.getTitle().contentEquals(finding.getTitle())) {
             issueBuilder.setTitle(finding.getTitle());
             issueUpdated = true;
         }

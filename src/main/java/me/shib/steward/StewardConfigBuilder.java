@@ -147,8 +147,8 @@ class StewardConfigBuilder {
         if (exitCodeOnFailure != null && exitCodeOnFailure >= 0) {
             config.setExitCodeOnFailure(exitCodeOnFailure);
         }
-        if (StewardEnvar.STEWARD_UPDATE_SUMMARY.getAsBoolean()) {
-            config.setUpdateSummary(true);
+        if (StewardEnvar.STEWARD_UPDATE_TITLE.getAsBoolean()) {
+            config.setUpdateTitle(true);
         }
         if (StewardEnvar.STEWARD_UPDATE_DESCRIPTION.getAsBoolean()) {
             config.setUpdateDescription(true);
