@@ -47,7 +47,7 @@ class StewardConfigBuilder {
 
     static synchronized StewardConfig buildConfig(String configURI) {
         try {
-            StewardConfig config = null;
+            StewardConfig config;
             if (configURI != null && !configURI.isEmpty()) {
                 config = configMap.get(configURI);
                 if (config != null) {
@@ -140,11 +140,11 @@ class StewardConfigBuilder {
             config.setDryRun(true);
         }
         Integer exitCodeOnNewIssues = StewardEnvar.STEWARD_EXIT_CODE_NEW_ISSUES.getAsInteger();
-        if (exitCodeOnNewIssues != null) {
+        if (exitCodeOnNewIssues != null && exitCodeOnNewIssues >= 0) {
             config.setExitCodeOnNewIssues(exitCodeOnNewIssues);
         }
         Integer exitCodeOnFailure = StewardEnvar.STEWARD_EXIT_CODE_FAILURE.getAsInteger();
-        if (exitCodeOnFailure != null) {
+        if (exitCodeOnFailure != null && exitCodeOnFailure >= 0) {
             config.setExitCodeOnFailure(exitCodeOnFailure);
         }
         if (StewardEnvar.STEWARD_UPDATE_SUMMARY.getAsBoolean()) {
