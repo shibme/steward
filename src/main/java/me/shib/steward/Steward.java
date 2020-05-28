@@ -135,8 +135,8 @@ public final class Steward {
             }
         }
         StringBuilder comment = new StringBuilder();
-        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeUp()))
-                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeDown()))) {
+        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeDown()))
+                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeUp()))) {
             issueBuilder.setPriority(finding.getPriority());
             System.out.println("Prioritizing " + issue.getKey() + " to " + tracker.getPriorityName(finding.getPriority()) + " based on actual priority.");
             comment.append("Prioritizing to **").append(tracker.getPriorityName(finding.getPriority())).append("** based on actual priority.");
