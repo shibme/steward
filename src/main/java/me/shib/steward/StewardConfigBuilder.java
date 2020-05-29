@@ -45,9 +45,9 @@ class StewardConfigBuilder {
         return contentBuilder.toString();
     }
 
-    static synchronized StewardConfig buildConfig(String configURI) {
+    static synchronized StewardConfig buildConfig(String configURI) throws StewardException {
+        StewardConfig config = null;
         try {
-            StewardConfig config = null;
             if (configURI != null && !configURI.isEmpty()) {
                 config = configMap.get(configURI);
                 if (config != null) {
@@ -67,25 +67,20 @@ class StewardConfigBuilder {
                     configMap.put(configURI, config);
                 }
             }
-            if (config == null) {
-                config = configMap.get("");
-                if (config != null) {
-                    return config;
-                } else {
-                    config = new StewardConfig();
-                    configMap.put("", config);
-                }
-            }
-            backFillFromEnv(config);
-            config.validate();
-            return config;
-        } catch (Exception e) {
-            return null;
+        } catch (Exception ignored) {
         }
-    }
-
-    static StewardConfig buildConfig() {
-        return buildConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
+        if (config == null) {
+            config = configMap.get("");
+            if (config != null) {
+                return config;
+            } else {
+                config = new StewardConfig();
+                configMap.put("", config);
+            }
+        }
+        backFillFromEnv(config);
+        config.validate();
+        return config;
     }
 
     private static void backFillFromEnv(StewardConfig config) {

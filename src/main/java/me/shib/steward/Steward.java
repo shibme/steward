@@ -23,11 +23,11 @@ public final class Steward {
         try {
             System.out.println("Findings Identified in " + data.getProject() + " [" +
                     data.getToolName() + "]: " + data.getFindings().size());
-            Steward steward = new Steward(data, config);
-            steward.processFindings();
-            steward.verifyExistingNonClosedIssues();
-            StewardProcess stewardProcess = steward.stewardProcess;
             if (config != null) {
+                Steward steward = new Steward(data, config);
+                steward.processFindings();
+                steward.verifyExistingNonClosedIssues();
+                StewardProcess stewardProcess = steward.stewardProcess;
                 if (stewardProcess.exceptions.size() > 0 && config.getExitCodeOnFailure() != null) {
                     System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
                     System.exit(config.getExitCodeOnFailure());

@@ -58,16 +58,18 @@ public final class StewardConfig {
     }
 
     public static StewardConfig getConfig() {
-        StewardConfig config = StewardConfigBuilder.buildConfig();
-        if (config == null) {
-            System.out.println("Please set the following environment variables.");
-            System.out.println(StewardEnvar.getVarDefinitions());
-        }
-        return config;
+        return getConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
     }
 
     public static StewardConfig getConfig(String configURI) {
-        return StewardConfigBuilder.buildConfig(configURI);
+        try {
+            return StewardConfigBuilder.buildConfig(configURI);
+        } catch (StewardException e) {
+            e.printStackTrace();
+            System.out.println("Please set the following environment variables.");
+            System.out.println(StewardEnvar.getVarDefinitions());
+        }
+        return null;
     }
 
     void validate() throws StewardException {
