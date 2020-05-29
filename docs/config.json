@@ -1,0 +1,44 @@
+{
+  "workflow": {
+    "Open": [
+      "In Progress",
+      "Invalid"
+    ],
+    "Reopened": [
+      "In Progress",
+      "Invalid"
+    ],
+    "Invalid": [
+      "Reopened"
+    ],
+    "In Progress": [
+      "Done",
+      "Fixed"
+    ],
+    "Done": [
+      "Closed",
+      "Reopened"
+    ],
+    "Fixed": [
+      "Closed",
+      "Reopened"
+    ],
+    "Closed": [
+      "Reopened"
+    ]
+  },
+  "reOpenStatus": "Reopened",
+  "resolvedStatuses": [
+    "Fixed",
+    "Done"
+  ],
+  "closedStatuses": [
+    "Closed"
+  ],
+  "ignoreForLabels": [
+    "ignore-this"
+  ],
+  "ignoreForStatuses": [
+    "Invalid"
+  ]
+}
