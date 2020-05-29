@@ -47,7 +47,7 @@ class StewardConfigBuilder {
 
     static synchronized StewardConfig buildConfig(String configURI) {
         try {
-            StewardConfig config;
+            StewardConfig config = null;
             if (configURI != null && !configURI.isEmpty()) {
                 config = configMap.get(configURI);
                 if (config != null) {
@@ -65,17 +65,19 @@ class StewardConfigBuilder {
                 }
                 if (config != null) {
                     configMap.put(configURI, config);
-                    return config;
                 }
             }
-            config = configMap.get("");
-            if (config != null) {
-                return config;
+            if (config == null) {
+                config = configMap.get("");
+                if (config != null) {
+                    return config;
+                } else {
+                    config = new StewardConfig();
+                    configMap.put("", config);
+                }
             }
-            config = new StewardConfig();
             backFillFromEnv(config);
             config.validate();
-            configMap.put("", config);
             return config;
         } catch (Exception e) {
             return null;
