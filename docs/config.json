@@ -13,7 +13,8 @@
     ],
     "In Progress": [
       "Done",
-      "Fixed"
+      "Fixed",
+      "Invalid"
     ],
     "Done": [
       "Closed",
