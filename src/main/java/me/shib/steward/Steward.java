@@ -104,6 +104,7 @@ public final class Steward {
     private void updateTrakrIssueForBug(TrakrIssue issue, StewardFinding finding) throws TrakrException {
         if (config.isIssueIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
+            return;
         }
         boolean issueUpdated = false;
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
