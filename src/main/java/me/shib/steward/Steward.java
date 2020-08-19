@@ -73,20 +73,21 @@ public final class Steward {
     }
 
     private void createTrakrIssueForBug(StewardFinding finding) throws TrakrException {
-        List<String> labels = new ArrayList<>();
+        Set<String> labels = new LinkedHashSet<>();
         labels.add(data.getProject());
         labels.add(data.getToolName());
         labels.addAll(data.getContexts());
         labels.addAll(data.getTags());
         labels.addAll(finding.getContexts());
+        labels.addAll(finding.getTags());
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
         issueBuilder.setProject(config.getProjectKey());
         issueBuilder.setTitle(finding.getTitle());
         issueBuilder.setIssueType(config.getIssueType());
-        issueBuilder.setAssignee(config.getAssignee());
+        issueBuilder.setAssignee(finding.getAssignee(config));
         issueBuilder.setPriority(finding.getPriority());
         issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
-        issueBuilder.setLabels(labels);
+        issueBuilder.setLabels(new ArrayList<>(labels));
         TrakrIssue trackerIssue = tracker.createIssue(issueBuilder);
         System.out.println("Created new issue: " + trackerIssue.getKey() + " - " + trackerIssue.getTitle() + " with priority "
                 + trackerIssue.getPriority());
@@ -109,8 +110,8 @@ public final class Steward {
         boolean issueUpdated = false;
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
         issueBuilder.setProject(config.getProjectKey());
-        if (issue.getAssignee() == null && config.getAssignee() != null) {
-            issueBuilder.setAssignee(config.getAssignee());
+        if (issue.getAssignee() == null && finding.getAssignee(config) != null) {
+            issueBuilder.setAssignee(finding.getAssignee(config));
             issueUpdated = true;
         }
         if (config.isUpdateTitle() && !issue.getTitle().contentEquals(finding.getTitle())) {

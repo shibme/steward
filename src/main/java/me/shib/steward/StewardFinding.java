@@ -13,6 +13,7 @@ public final class StewardFinding {
     private final Set<String> contexts;
     private final Set<String> tags;
     private String description;
+    private String assignee;
 
     public StewardFinding(String title, TrakrPriority priority) {
         this.title = title;
@@ -55,5 +56,23 @@ public final class StewardFinding {
 
     Set<String> getContexts() {
         return contexts;
+    }
+
+    Set<String> getTags() {
+        return tags;
+    }
+
+    String getAssignee(StewardConfig config) {
+        if (assignee != null && !assignee.isEmpty()) {
+            return assignee;
+        }
+        if (config.getAssignee() != null && !config.getAssignee().isEmpty()) {
+            return config.getAssignee();
+        }
+        return assignee;
+    }
+
+    public void setAssignee(String assignee) {
+        this.assignee = assignee;
     }
 }
