@@ -170,8 +170,9 @@ public final class Steward {
     }
 
     private boolean isVulnerabilityExists(TrakrIssue issue, List<StewardFinding> findings) {
+        List<String> lowerCaseIssueLabelsList = toLowerCaseList(issue.getLabels());
         for (StewardFinding finding : findings) {
-            if (toLowerCaseList(issue.getLabels()).containsAll(toLowerCaseList(finding.getContexts()))) {
+            if (lowerCaseIssueLabelsList.containsAll(toLowerCaseList(finding.getContexts()))) {
                 return true;
             }
         }
