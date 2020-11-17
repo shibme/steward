@@ -164,7 +164,9 @@ public final class Steward {
     private List<String> toLowerCaseList(Collection<String> list) {
         List<String> lowerCaseList = new ArrayList<>();
         for (String item : list) {
-            lowerCaseList.add(item.toLowerCase());
+            if (item != null) {
+                lowerCaseList.add(item.toLowerCase());
+            }
         }
         return lowerCaseList;
     }

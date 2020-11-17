@@ -23,7 +23,9 @@ public final class StewardFinding {
     }
 
     public void addContext(String context) {
-        this.contexts.add(context);
+        if (context != null) {
+            this.contexts.add(context);
+        }
     }
 
     public void addContexts(Collection<String> contexts) {
@@ -31,7 +33,9 @@ public final class StewardFinding {
     }
 
     public void addTag(String tag) {
-        this.tags.add(tag);
+        if (tag != null) {
+            this.tags.add(tag);
+        }
     }
 
     public void addTags(Collection<String> tags) {
