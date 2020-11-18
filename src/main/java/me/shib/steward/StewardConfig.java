@@ -371,7 +371,7 @@ public final class StewardConfig {
         private int commentInterval;
 
         public Changes(int afterDays, boolean transition, boolean comment, int commentInterval) {
-            this.afterDays = 0;
+            this.afterDays = afterDays;
             this.transition = transition;
             this.comment = comment;
             if (commentInterval < 1) {
