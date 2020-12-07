@@ -360,7 +360,7 @@ public final class StewardConfig {
         this.updateLabels = updateLabels;
     }
 
-    static class Changes {
+    public static class Changes {
 
         private transient static final int defaultCommentInterval = 30;
         private transient static final long oneDay = 86400000;
