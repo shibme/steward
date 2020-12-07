@@ -45,7 +45,7 @@ class StewardConfigBuilder {
         return contentBuilder.toString();
     }
 
-    static synchronized StewardConfig buildConfig(String configURI) throws StewardException {
+    static synchronized StewardConfig buildConfig(String configURI) {
         StewardConfig config = null;
         try {
             if (configURI != null && !configURI.isEmpty()) {
@@ -79,7 +79,6 @@ class StewardConfigBuilder {
             }
         }
         backFillFromEnv(config);
-        config.validate();
         return config;
     }
 

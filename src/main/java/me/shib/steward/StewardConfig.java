@@ -58,12 +58,10 @@ public final class StewardConfig {
     }
 
     public static StewardConfig getConfig() {
-        return getConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
-    }
-
-    public static StewardConfig getConfig(String configURI) {
         try {
-            return StewardConfigBuilder.buildConfig(configURI);
+            StewardConfig config = getConfig(StewardEnvar.STEWARD_CONFIG.getAsString());
+            config.validate();
+            return config;
         } catch (StewardException e) {
             e.printStackTrace();
             System.out.println("Please set the following environment variables.");
@@ -72,7 +70,11 @@ public final class StewardConfig {
         return null;
     }
 
-    void validate() throws StewardException {
+    public static StewardConfig getConfig(String configURI) {
+        return StewardConfigBuilder.buildConfig(configURI);
+    }
+
+    public void validate() throws StewardException {
         if (projectKey == null || projectKey.isEmpty()) {
             throw new StewardException("A valid project key is required");
         }
