@@ -4,14 +4,14 @@ import java.util.*;
 
 public final class StewardData {
 
-    private final String project;
+    private final String projectName;
     private final String toolName;
     private final Set<String> contexts;
     private final Set<String> tags;
     private final List<StewardFinding> findings;
 
-    public StewardData(String project, String toolName) {
-        this.project = project;
+    public StewardData(String projectName, String toolName) {
+        this.projectName = projectName;
         this.toolName = toolName;
         this.contexts = new LinkedHashSet<>();
         this.tags = new LinkedHashSet<>();
@@ -40,8 +40,8 @@ public final class StewardData {
         this.findings.add(finding);
     }
 
-    String getProject() {
-        return project;
+    String getProjectName() {
+        return projectName;
     }
 
     String getToolName() {

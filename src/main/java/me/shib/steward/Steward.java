@@ -21,7 +21,7 @@ public final class Steward {
 
     public static void process(StewardData data, StewardConfig config) throws StewardException {
         try {
-            System.out.println("Findings Identified in " + data.getProject() + " [" +
+            System.out.println("Findings Identified in " + data.getProjectName() + " [" +
                     data.getToolName() + "]: " + data.getFindings().size());
             if (config != null) {
                 Steward steward = new Steward(data, config);
@@ -42,6 +42,7 @@ public final class Steward {
                 System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
                 System.exit(config.getExitCodeOnFailure());
             } else {
+                e.printStackTrace();
                 throw new StewardException(e);
             }
         }
@@ -55,7 +56,7 @@ public final class Steward {
         try {
             TrakrQuery query = new TrakrQuery();
             query.add(TrakrQuery.Condition.project, TrakrQuery.Operator.matching, config.getProjectKey());
-            query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
+            query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProjectName());
             query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getToolName());
             for (String key : data.getContexts()) {
                 query.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, key);
@@ -74,7 +75,7 @@ public final class Steward {
 
     private void createTrakrIssueForBug(StewardFinding finding) throws TrakrException {
         Set<String> labels = new LinkedHashSet<>();
-        labels.add(data.getProject());
+        labels.add(data.getProjectName());
         labels.add(data.getToolName());
         labels.addAll(data.getContexts());
         labels.addAll(data.getTags());
@@ -272,7 +273,7 @@ public final class Steward {
 
     private void processFinding(StewardFinding finding) throws StewardException, TrakrException {
         TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
-        searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
+        searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProjectName());
         searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getToolName());
         for (String context : finding.getContexts()) {
             searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, context);
@@ -306,7 +307,7 @@ public final class Steward {
             if (config.isAutoResolveAllowed()) {
                 System.out.println("\nVerifying if any existing issues are fixed...");
                 TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
-                searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProject());
+                searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProjectName());
                 searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getToolName());
                 for (String context : data.getContexts()) {
                     searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, context);
