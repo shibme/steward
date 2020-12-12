@@ -9,7 +9,8 @@ public final class StewardExecutionResult {
 
     private final Map<String, StewardIssueLifeCycle> issueLifeCycles;
     private final List<Exception> exceptions;
-    private int exists;
+    private int findings;
+    private int toResolve;
     private int created;
     private int updated;
     private int assigned;
@@ -26,6 +27,8 @@ public final class StewardExecutionResult {
     StewardExecutionResult() {
         this.issueLifeCycles = new HashMap<>();
         this.exceptions = new ArrayList<>();
+        this.findings = 0;
+        this.toResolve = 0;
         this.created = 0;
         this.updated = 0;
         this.assigned = 0;
@@ -50,6 +53,11 @@ public final class StewardExecutionResult {
 
     void summarizeCount() {
         for (StewardIssueLifeCycle lifeCycle : issueLifeCycles.values()) {
+            if (lifeCycle.isExists()) {
+                findings++;
+            } else {
+                toResolve++;
+            }
             if (lifeCycle.isCreated()) {
                 created++;
             }
@@ -97,8 +105,12 @@ public final class StewardExecutionResult {
         return issueLifeCycles;
     }
 
-    public int getExists() {
-        return exists;
+    public int getFindings() {
+        return findings;
+    }
+
+    public int getToResolve() {
+        return toResolve;
     }
 
     public int getCreated() {
@@ -153,6 +165,8 @@ public final class StewardExecutionResult {
     public String toString() {
         summarizeCount();
         return "\nExecution Summary:" +
+                "\nFindings: " + findings +
+                "\nTo Resolve: " + toResolve +
                 "\nCreated: " + created +
                 "\nUpdated: " + updated +
                 "\nAssigned: " + assigned +
