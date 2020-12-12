@@ -51,8 +51,8 @@ public final class Steward {
         return executionResult;
     }
 
-    public static void process(StewardData data) throws StewardException {
-        process(data, StewardConfig.getConfig());
+    public static StewardExecutionResult process(StewardData data) throws StewardException {
+        return process(data, StewardConfig.getConfig());
     }
 
     private Trakr getContextTracker() throws StewardException {
