@@ -27,6 +27,9 @@ public final class StewardExecutionResult {
     StewardExecutionResult() {
         this.issueLifeCycles = new HashMap<>();
         this.exceptions = new ArrayList<>();
+    }
+
+    private void init() {
         this.findings = 0;
         this.toResolve = 0;
         this.created = 0;
@@ -52,6 +55,7 @@ public final class StewardExecutionResult {
     }
 
     void summarizeCount() {
+        init();
         for (StewardIssueLifeCycle lifeCycle : issueLifeCycles.values()) {
             if (lifeCycle.isExists()) {
                 findings++;
@@ -178,6 +182,7 @@ public final class StewardExecutionResult {
                 "\nResolved: " + resolved +
                 "\nReopened: " + reOpened +
                 "\nCommented: " + commented +
-                "\nIgnored: " + ignored;
+                "\nIgnored: " + ignored +
+                "\nExceptions: " + exceptions.size();
     }
 }
