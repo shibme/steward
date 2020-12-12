@@ -152,7 +152,7 @@ public final class StewardExecutionResult {
     @Override
     public String toString() {
         summarizeCount();
-        return "Execution Summary:" +
+        return "\nExecution Summary:" +
                 "\nCreated: " + created +
                 "\nUpdated: " + updated +
                 "\nAssigned: " + assigned +

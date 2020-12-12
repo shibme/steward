@@ -95,7 +95,9 @@ public final class Steward {
         TrakrIssue issue = tracker.createIssue(issueBuilder);
         System.out.println("Created new issue: " + issue.getKey() + " - " + issue.getTitle() + " with priority "
                 + issue.getPriority());
-        return new StewardIssueLifeCycle(issue, true);
+        StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
+        issueLifeCycle.setCreated();
+        return issueLifeCycle;
     }
 
     private boolean isLabelExsitingInSet(Set<String> fromIssue, String labelForAvailabilityCheck) {
