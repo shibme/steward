@@ -6,32 +6,33 @@ import java.util.*;
 
 public final class Steward {
 
-    private transient final StewardProcess stewardProcess;
+    private transient final StewardExecutionResult executionResult;
 
     private final StewardConfig config;
     private final Trakr tracker;
     private final StewardData data;
 
-    private Steward(StewardData data, StewardConfig config) throws StewardException {
-        this.stewardProcess = new StewardProcess();
+    private Steward(StewardData data, StewardConfig config, StewardExecutionResult executionResult) throws StewardException {
+        this.executionResult = executionResult;
         this.data = data;
         this.config = config;
         this.tracker = getContextTracker();
     }
 
-    public static void process(StewardData data, StewardConfig config) throws StewardException {
+    public static StewardExecutionResult process(StewardData data, StewardConfig config) throws StewardException {
+        StewardExecutionResult executionResult = new StewardExecutionResult();
         try {
             System.out.println("Findings Identified in " + data.getProjectName() + " [" +
                     data.getToolName() + "]: " + data.getFindings().size());
             if (config != null) {
-                Steward steward = new Steward(data, config);
-                steward.processFindings();
-                steward.verifyExistingNonClosedIssues();
-                StewardProcess stewardProcess = steward.stewardProcess;
-                if (stewardProcess.exceptions.size() > 0 && config.getExitCodeOnFailure() != null) {
+                Steward steward = new Steward(data, config, executionResult);
+                steward.resolveNonExistantFindings();
+                steward.processExistingFindings();
+                executionResult.summarizeCount();
+                if (executionResult.getExceptions().size() > 0 && config.getExitCodeOnFailure() != null) {
                     System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
                     System.exit(config.getExitCodeOnFailure());
-                } else if (stewardProcess.created > 0 && config.getExitCodeOnNewIssues() != null) {
+                } else if (executionResult.getCreated() > 0 && config.getExitCodeOnNewIssues() != null) {
                     System.out.println("New issues found. Exiting (" + config.getExitCodeOnNewIssues() + ").");
                     System.exit(config.getExitCodeOnNewIssues());
                 }
@@ -46,6 +47,8 @@ public final class Steward {
                 throw new StewardException(e);
             }
         }
+        System.out.println(executionResult);
+        return executionResult;
     }
 
     public static void process(StewardData data) throws StewardException {
@@ -73,7 +76,7 @@ public final class Steward {
         }
     }
 
-    private void createTrakrIssueForBug(StewardFinding finding) throws TrakrException {
+    private StewardIssueLifeCycle createIssueForFinding(StewardFinding finding) throws TrakrException {
         Set<String> labels = new LinkedHashSet<>();
         labels.add(data.getProjectName());
         labels.add(data.getToolName());
@@ -89,9 +92,10 @@ public final class Steward {
         issueBuilder.setPriority(finding.getPriority());
         issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
         issueBuilder.setLabels(new ArrayList<>(labels));
-        TrakrIssue trackerIssue = tracker.createIssue(issueBuilder);
-        System.out.println("Created new issue: " + trackerIssue.getKey() + " - " + trackerIssue.getTitle() + " with priority "
-                + trackerIssue.getPriority());
+        TrakrIssue issue = tracker.createIssue(issueBuilder);
+        System.out.println("Created new issue: " + issue.getKey() + " - " + issue.getTitle() + " with priority "
+                + issue.getPriority());
+        return new StewardIssueLifeCycle(issue, true);
     }
 
     private boolean isLabelExsitingInSet(Set<String> fromIssue, String labelForAvailabilityCheck) {
@@ -103,27 +107,29 @@ public final class Steward {
         return false;
     }
 
-    private void updateTrakrIssueForBug(TrakrIssue issue, StewardFinding finding) throws TrakrException {
+    private StewardIssueLifeCycle syncIssueWithFinding(TrakrIssue issue, StewardFinding finding)
+            throws TrakrException {
+        StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
         if (config.isIssueIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
-            return;
+            issueLifeCycle.setIgnored();
+            return issueLifeCycle;
         }
-        boolean issueUpdated = false;
         TrakrIssueBuilder issueBuilder = new TrakrIssueBuilder();
         issueBuilder.setProject(config.getProjectKey());
         if (issue.getAssignee() == null && finding.getAssignee(config) != null) {
             issueBuilder.setAssignee(finding.getAssignee(config));
-            issueUpdated = true;
+            issueLifeCycle.setAssigned();
         }
         if (config.isUpdateTitle() && !issue.getTitle().contentEquals(finding.getTitle())) {
             issueBuilder.setTitle(finding.getTitle());
-            issueUpdated = true;
+            issueLifeCycle.setTitleUpdated();
         }
         if (config.isUpdateDescription() &&
                 !tracker.areContentsMatching(new TrakrContent(finding.getDescription()),
                         issue.getDescription())) {
             issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
-            issueUpdated = true;
+            issueLifeCycle.setDescriptionUpdated();
         }
         if (config.isUpdateLabels()) {
             Set<String> updateSet = new HashSet<>(issue.getLabels());
@@ -134,7 +140,7 @@ public final class Steward {
             }
             if (updateSet.size() != issue.getLabels().size()) {
                 issueBuilder.setLabels(new ArrayList<>(updateSet));
-                issueUpdated = true;
+                issueLifeCycle.setLabelsUpdated();
             }
         }
         StringBuilder comment = new StringBuilder();
@@ -143,23 +149,25 @@ public final class Steward {
             issueBuilder.setPriority(finding.getPriority());
             System.out.println("Prioritizing " + issue.getKey() + " to " + tracker.getPriorityName(finding.getPriority()) + " based on actual priority.");
             comment.append("Prioritizing to **").append(tracker.getPriorityName(finding.getPriority())).append("** based on actual priority.");
-            issueUpdated = true;
+            issueLifeCycle.setPriorityUpdated();
         }
-        if (issueUpdated) {
+        if (issueLifeCycle.isUpdated()) {
             issue = tracker.updateIssue(issue, issueBuilder);
             if (!comment.toString().isEmpty()) {
                 issue.addComment(new TrakrContent(comment.toString()));
+                issueLifeCycle.setCommented();
             }
         }
         if (config.isReOpeningAllowedForStatus(issue.getStatus())) {
-            reopenIssue(issue);
-        } else if (issueUpdated) {
+            reopenIssue(issueLifeCycle);
+        } else if (issueLifeCycle.isUpdated()) {
             System.out.println("Updated the issue: " + issue.getKey() + " - "
                     + issue.getTitle());
         } else {
             System.out.println("Issue up-to date: " + issue.getKey() + " - "
                     + issue.getTitle());
         }
+        return issueLifeCycle;
     }
 
     private List<String> toLowerCaseList(Collection<String> list) {
@@ -182,10 +190,12 @@ public final class Steward {
         return false;
     }
 
-    private boolean resolveIssue(TrakrIssue issue) throws TrakrException {
+    private void resolveIssue(StewardIssueLifeCycle issueLifeCycle) throws TrakrException {
+        TrakrIssue issue = issueLifeCycle.getIssue();
         if (config.isIssueIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
-            return false;
+            issueLifeCycle.setIgnored();
+            return;
         }
         System.out.println("Issue: " + issue.getKey() + " has been fixed.");
         boolean transitioned = false;
@@ -193,7 +203,7 @@ public final class Steward {
         if (config.getAutoResolve().isTransition(issue)) {
             List<String> transitions = config.getTransitionsToClose(issue.getStatus());
             System.out.println("Closing the issue " + issue.getKey() + ".");
-            transitioned = transitionIssue(transitions, issue);
+            transitioned = transitionIssue(transitions, issueLifeCycle);
             if (!transitioned) {
                 System.out.println("No path defined to Close the issue from \"" + issue.getStatus() + "\" state.");
             }
@@ -213,21 +223,22 @@ public final class Steward {
                 comment.append(StewardConfig.autoResolvingNotificationComment + "\n");
             }
             comment.append(StewardConfig.closingNotificationComment);
+            issueLifeCycle.setResolved();
         }
         if (!comment.toString().isEmpty()) {
             issue.addComment(new TrakrContent(comment.toString()));
-            return true;
+            issueLifeCycle.setCommented();
         }
-        return transitioned;
     }
 
-    private void reopenIssue(TrakrIssue issue) throws TrakrException {
+    private void reopenIssue(StewardIssueLifeCycle issueLifeCycle) throws TrakrException {
+        TrakrIssue issue = issueLifeCycle.getIssue();
         System.out.println("Issue: " + issue.getKey() + " was resolved, but not actually fixed.");
         boolean transitioned = false;
         if (config.getAutoReopen().isTransition(issue)) {
             List<String> transitions = config.getTransitionsToOpen(issue.getStatus());
             System.out.println("Reopening the issue " + issue.getKey() + ":");
-            transitioned = transitionIssue(transitions, issue);
+            transitioned = transitionIssue(transitions, issueLifeCycle);
             if (!transitioned) {
                 System.out.println("No path defined to Open the issue from \"" + issue.getStatus() + "\" state.");
             }
@@ -244,13 +255,16 @@ public final class Steward {
                 comment.append("\n");
             }
             comment.append(StewardConfig.reopeningNotificationComment);
+            issueLifeCycle.setReOpened();
         }
         if (!comment.toString().isEmpty()) {
             issue.addComment(new TrakrContent(comment.toString()));
+            issueLifeCycle.setCommented();
         }
     }
 
-    private boolean transitionIssue(List<String> transitions, TrakrIssue issue) {
+    private boolean transitionIssue(List<String> transitions, StewardIssueLifeCycle issueLifeCycle) {
+        TrakrIssue issue = issueLifeCycle.getIssue();
         try {
             if (transitions.size() > 1) {
                 StringBuilder consoleLog = new StringBuilder();
@@ -266,12 +280,13 @@ public final class Steward {
                 return true;
             }
         } catch (Exception e) {
-            stewardProcess.addException(e);
+            issueLifeCycle.addException(e);
         }
         return false;
     }
 
-    private void processFinding(StewardFinding finding) throws StewardException, TrakrException {
+    private StewardIssueLifeCycle processFinding(StewardFinding finding) throws StewardException, TrakrException {
+        StewardIssueLifeCycle issueLifeCycle;
         TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
         searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProjectName());
         searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getToolName());
@@ -280,29 +295,30 @@ public final class Steward {
         }
         List<TrakrIssue> issues = tracker.searchTrakrIssues(searchQuery);
         if (issues.size() == 0) {
-            createTrakrIssueForBug(finding);
+            issueLifeCycle = createIssueForFinding(finding);
         } else if (issues.size() == 1) {
-            updateTrakrIssueForBug(issues.get(0), finding);
+            issueLifeCycle = syncIssueWithFinding(issues.get(0), finding);
         } else {
             throw new StewardException("More than one issue listed:\n"
                     + "Labels: " + Arrays.toString(finding.getContexts().toArray()) + "\n"
                     + "Issues: " + Arrays.toString(issues.toArray()));
         }
+        return issueLifeCycle;
     }
 
-    private void processFindings() {
+    private void processExistingFindings() {
         System.out.println("\nProcessing scanned results...");
         for (StewardFinding finding : data.getFindings()) {
             try {
-                processFinding(finding);
+                executionResult.addIssueLifeCycle(processFinding(finding));
             } catch (StewardException | TrakrException e) {
                 e.printStackTrace();
-                stewardProcess.addException(e);
+                executionResult.addException(e);
             }
         }
     }
 
-    private void verifyExistingNonClosedIssues() throws StewardException {
+    private void resolveNonExistantFindings() throws StewardException {
         try {
             if (config.isAutoResolveAllowed()) {
                 System.out.println("\nVerifying if any existing issues are fixed...");
@@ -317,16 +333,18 @@ public final class Steward {
                 int count = 0;
                 for (TrakrIssue issue : issues) {
                     if (config.isAutoResolveAllowedForStatus(issue.getStatus())) {
+                        StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, false);
                         try {
                             if (!isVulnerabilityExists(issue, data.getFindings())) {
                                 count++;
-                                if (!resolveIssue(issue)) {
-                                    System.out.println(issue.getKey() + ": No action taken now.");
+                                resolveIssue(issueLifeCycle);
+                                if (!issueLifeCycle.isResolved()) {
+                                    System.out.println(issue.getKey() + ": Not Resolved.");
                                 }
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
-                            stewardProcess.addException(e);
+                            issueLifeCycle.addException(e);
                         }
                     }
                 }
@@ -339,49 +357,4 @@ public final class Steward {
         }
     }
 
-    static final class StewardProcess {
-        private final List<Exception> exceptions;
-        private int created;
-        private int updated;
-        private int commented;
-
-        StewardProcess() {
-            this.created = 0;
-            this.updated = 0;
-            this.commented = 0;
-            this.exceptions = new ArrayList<>();
-        }
-
-        public int getCreated() {
-            return created;
-        }
-
-        void setCreated(int created) {
-            this.created = created;
-        }
-
-        public int getUpdated() {
-            return updated;
-        }
-
-        void setUpdated(int updated) {
-            this.updated = updated;
-        }
-
-        public int getCommented() {
-            return commented;
-        }
-
-        void setCommented(int commented) {
-            this.commented = commented;
-        }
-
-        void addException(Exception e) {
-            this.exceptions.add(e);
-        }
-
-        public List<Exception> getExceptions() {
-            return exceptions;
-        }
-    }
 }
