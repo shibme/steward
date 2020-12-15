@@ -100,15 +100,6 @@ public final class Steward {
         return issueLifeCycle;
     }
 
-    private boolean isLabelExsitingInSet(Set<String> fromIssue, String labelForAvailabilityCheck) {
-        for (String label : fromIssue) {
-            if (label.equalsIgnoreCase(labelForAvailabilityCheck)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private StewardIssueLifeCycle syncIssueWithFinding(TrakrIssue issue, StewardFinding finding)
             throws TrakrException {
         StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
@@ -134,14 +125,11 @@ public final class Steward {
             issueLifeCycle.setDescriptionUpdated();
         }
         if (config.isUpdateLabels()) {
-            Set<String> updateSet = new HashSet<>(issue.getLabels());
-            for (String labelFromBug : finding.getContexts()) {
-                if (!isLabelExsitingInSet(updateSet, labelFromBug)) {
-                    updateSet.add(labelFromBug);
-                }
-            }
-            if (updateSet.size() != issue.getLabels().size()) {
-                issueBuilder.setLabels(new ArrayList<>(updateSet));
+            Set<String> newSet = new HashSet<>(issue.getLabels());
+            newSet.addAll(finding.getContexts());
+            newSet.addAll(finding.getTags());
+            if (newSet.size() != issue.getLabels().size()) {
+                issueBuilder.setLabels(new ArrayList<>(newSet));
                 issueLifeCycle.setLabelsUpdated();
             }
         }
