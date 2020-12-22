@@ -29,12 +29,19 @@ public final class Steward {
                 steward.resolveNonExistantFindings();
                 steward.processExistingFindings();
                 executionResult.summarizeCount();
+                Integer exitCode = null;
                 if (executionResult.getExceptions().size() > 0 && config.getExitCodeOnFailure() != null) {
                     System.out.println("Failure detected. Exiting (" + config.getExitCodeOnFailure() + ").");
-                    System.exit(config.getExitCodeOnFailure());
+                    exitCode = config.getExitCodeOnFailure();
                 } else if (executionResult.getCreated() > 0 && config.getExitCodeOnNewIssues() != null) {
                     System.out.println("New issues found. Exiting (" + config.getExitCodeOnNewIssues() + ").");
-                    System.exit(config.getExitCodeOnNewIssues());
+                    exitCode = config.getExitCodeOnNewIssues();
+                }
+                if (exitCode != null) {
+                    System.exit(exitCode);
+                } else if (executionResult.getFindings() > 0 && config.getExitCodeOnIssues() != null) {
+                    System.out.println("Unresolved issues found. Exiting (" + config.getExitCodeOnIssues() + ").");
+                    System.exit(config.getExitCodeOnIssues());
                 }
             }
         } catch (Exception e) {

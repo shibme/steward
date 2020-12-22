@@ -135,6 +135,10 @@ class StewardConfigBuilder {
         if (StewardEnvar.STEWARD_DRY_RUN.getAsBoolean()) {
             config.setDryRun(true);
         }
+        Integer exitCodeOnIssues = StewardEnvar.STEWARD_EXIT_CODE_ISSUES.getAsInteger();
+        if (exitCodeOnIssues != null && exitCodeOnIssues >= 0) {
+            config.setExitCodeOnIssues(exitCodeOnIssues);
+        }
         Integer exitCodeOnNewIssues = StewardEnvar.STEWARD_EXIT_CODE_NEW_ISSUES.getAsInteger();
         if (exitCodeOnNewIssues != null && exitCodeOnNewIssues >= 0) {
             config.setExitCodeOnNewIssues(exitCodeOnNewIssues);

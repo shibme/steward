@@ -20,6 +20,7 @@ public final class StewardConfig {
     private Trakr.Type trackerName;
     private Trakr.Connection connection;
     private boolean dryRun;
+    private Integer exitCodeOnIssues;
     private Integer exitCodeOnNewIssues;
     private Integer exitCodeOnFailure;
     private boolean updateTitle;
@@ -90,6 +91,14 @@ public final class StewardConfig {
         if (connection == null) {
             throw new StewardException("A valid credential is required");
         }
+    }
+
+    public Integer getExitCodeOnIssues() {
+        return exitCodeOnIssues;
+    }
+
+    public void setExitCodeOnIssues(Integer exitCodeOnIssues) {
+        this.exitCodeOnIssues = exitCodeOnIssues;
     }
 
     Integer getExitCodeOnNewIssues() {
