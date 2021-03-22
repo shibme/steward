@@ -178,6 +178,10 @@ class StewardConfigBuilder {
         if (closedStatuses != null) {
             config.setClosedStatuses(closedStatuses);
         }
+        String ignoreIssueSecret = StewardEnvar.STEWARD_IGNORE_ISSUE_SECRET.getAsString();
+        if (ignoreIssueSecret != null) {
+            config.setIgnoreIssueSecret(ignoreIssueSecret);
+        }
         List<String> ignoreLabels = StewardEnvar.STEWARD_IGNORE_LABELS.getAsList();
         if (ignoreLabels != null) {
             config.setIgnoreForLabels(ignoreLabels);

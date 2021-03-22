@@ -30,6 +30,8 @@ enum StewardEnvar {
     STEWARD_REOPEN_STATUS("Status to be moved to while reopening"),
     STEWARD_RESOLVED_STATUSES("List of resolved statuses [CSV supported]"),
     STEWARD_CLOSED_STATUSES("List of closed statuses [CSV supported]"),
+    STEWARD_IGNORE_ISSUE_SECRET("Issues containing a label generated with a prefix \"ignore-\" followed " +
+            "by last few (minimum 8) chars of HS256 using this as secret and issue key as value will be ignored"),
     STEWARD_IGNORE_LABELS("Issues having these labels will be ignored [CSV supported]"),
     STEWARD_IGNORE_STATUSES("Issues having these statuses will be ignored [CSV supported]"),
     STEWARD_AUTO_REOPEN_AFTER("Days after which auto-reopen should work [Default 0]"),

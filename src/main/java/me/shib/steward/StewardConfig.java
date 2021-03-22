@@ -2,6 +2,10 @@ package me.shib.steward;
 
 import me.shib.lib.trakr.*;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public final class StewardConfig {
@@ -13,7 +17,7 @@ public final class StewardConfig {
     static transient final String autoResolvingNotificationComment = "Auto resolving this issue.";
     static transient final String closingNotificationComment = "Closing this issue after verification.";
     static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
-
+    private static transient final int ignoreIssueHashLength = 8;
     private String projectKey;
     private String issueType;
     private Map<TrakrPriority, String> priorityMap;
@@ -33,6 +37,7 @@ public final class StewardConfig {
     private String reOpenStatus;
     private List<String> resolvedStatuses;
     private List<String> closedStatuses;
+    private String ignoreIssueSecret;
     private List<String> ignoreForLabels;
     private List<String> ignoreForStatuses;
     private Changes autoReopen;
@@ -73,6 +78,22 @@ public final class StewardConfig {
 
     public static StewardConfig getConfig(String configURI) {
         return StewardConfigBuilder.buildConfig(configURI);
+    }
+
+    private static String getHS256(String message, String secret) throws InvalidKeyException, NoSuchAlgorithmException {
+        byte[] secretBytes = secret.getBytes();
+        String algorithm = "HmacSHA256";
+        Mac mac = Mac.getInstance(algorithm);
+        mac.init(new SecretKeySpec(secretBytes, algorithm));
+        byte[] bytes = mac.doFinal(message.getBytes());
+        final char[] hexArray = "0123456789abcdef".toCharArray();
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0, v; j < bytes.length; j++) {
+            v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     public void validate() throws StewardException {
@@ -127,6 +148,10 @@ public final class StewardConfig {
 
     public void setResolvedStatuses(List<String> resolvedStatuses) {
         this.resolvedStatuses = resolvedStatuses;
+    }
+
+    public void setIgnoreIssueSecret(String ignoreIssueSecret) {
+        this.ignoreIssueSecret = ignoreIssueSecret;
     }
 
     public void setIgnoreForLabels(List<String> ignoreForLabels) {
@@ -320,14 +345,28 @@ public final class StewardConfig {
             }
         }
         if (ignoreForLabels != null) {
-            for (String ignorableLabel : ignoreForLabels) {
-                for (String issueLabel : issue.getLabels()) {
+            for (String issueLabel : issue.getLabels()) {
+                if (ignoreIssueSecret != null && issueLabel.toLowerCase().startsWith("ignore-")) {
+                    String issueIgnoreHash = issueLabel.toLowerCase()
+                            .replaceFirst("ignore-", "");
+                    if (issueIgnoreHash.length() >= ignoreIssueHashLength) {
+                        try {
+                            String calculatedHash = getHS256(issue.getKey(), ignoreIssueSecret);
+                            if (calculatedHash.endsWith(issueIgnoreHash)) {
+                                return true;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                for (String ignorableLabel : ignoreForLabels) {
                     if (ignorableLabel.equalsIgnoreCase(issueLabel)) {
                         return true;
                     }
                 }
             }
         }
+
         return false;
     }
 
