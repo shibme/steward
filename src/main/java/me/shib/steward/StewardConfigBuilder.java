@@ -182,10 +182,6 @@ class StewardConfigBuilder {
         if (specialConditionSecret != null) {
             config.setSpecialConditionSecret(specialConditionSecret);
         }
-        List<String> ignoreLabels = StewardEnvar.STEWARD_IGNORE_LABELS.getAsList();
-        if (ignoreLabels != null) {
-            config.setIgnoreForLabels(ignoreLabels);
-        }
         List<String> ignoreStatuses = StewardEnvar.STEWARD_IGNORE_STATUSES.getAsList();
         if (ignoreStatuses != null) {
             config.setIgnoreForStatuses(ignoreStatuses);

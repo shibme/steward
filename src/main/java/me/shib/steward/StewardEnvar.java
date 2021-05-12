@@ -32,7 +32,6 @@ enum StewardEnvar {
     STEWARD_CLOSED_STATUSES("List of closed statuses [CSV supported]"),
     STEWARD_SPECIAL_CONDITION_SECRET("Issues containing a label generated with a prefix \"ignore-\" followed " +
             "by last few (minimum 8) chars of HS256 using this as secret and issue key as value will be ignored"),
-    STEWARD_IGNORE_LABELS("Issues having these labels will be ignored [CSV supported]"),
     STEWARD_IGNORE_STATUSES("Issues having these statuses will be ignored [CSV supported]"),
     STEWARD_AUTO_REOPEN_AFTER("Days after which auto-reopen should work [Default 0]"),
     STEWARD_AUTO_REOPEN_TRANSITION("Transition issues to reopened status if required [TRUE|FALSE]"),
