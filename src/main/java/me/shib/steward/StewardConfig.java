@@ -17,6 +17,8 @@ public final class StewardConfig {
     static transient final String autoResolvingNotificationComment = "Auto resolving this issue.";
     static transient final String closingNotificationComment = "Closing this issue after verification.";
     static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
+    private static transient final String issueCompleteIgnoreLabelPrefix = "Ignore-";
+    private static transient final String issuePriorityIgnoreLabelPrefix = "IgnorePriority-";
     private static transient final int specialConditionHashLength = 8;
     private String projectKey;
     private String issueType;
@@ -38,7 +40,6 @@ public final class StewardConfig {
     private List<String> resolvedStatuses;
     private List<String> closedStatuses;
     private String specialConditionSecret;
-    private List<String> ignoreForLabels;
     private List<String> ignoreForStatuses;
     private Changes autoReopen;
     private Changes autoResolve;
@@ -152,10 +153,6 @@ public final class StewardConfig {
 
     public void setSpecialConditionSecret(String specialConditionSecret) {
         this.specialConditionSecret = specialConditionSecret;
-    }
-
-    public void setIgnoreForLabels(List<String> ignoreForLabels) {
-        this.ignoreForLabels = ignoreForLabels;
     }
 
     public void setIgnoreForStatuses(List<String> ignoreForStatuses) {
@@ -281,16 +278,37 @@ public final class StewardConfig {
         this.updateDescription = updateDescription;
     }
 
-    boolean isPrioritizeUp() {
-        return this.prioritizeUp;
+    boolean isPrioritizeUp(TrakrIssue issue) {
+        return this.prioritizeUp || isPriorityChangeAllowed(issue);
     }
 
     public void setPrioritizeUp(boolean prioritizeUp) {
         this.prioritizeUp = prioritizeUp;
     }
 
-    boolean isPrioritizeDown() {
-        return this.prioritizeDown;
+    boolean isPrioritizeDown(TrakrIssue issue) {
+        return this.prioritizeDown || isPriorityChangeAllowed(issue);
+    }
+
+    private boolean isPriorityChangeAllowed(TrakrIssue issue) {
+        if (issue.getLabels() != null) {
+            for (String issueLabel : issue.getLabels()) {
+                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(issuePriorityIgnoreLabelPrefix.toLowerCase())) {
+                    String issueIgnoreHash = issueLabel.toLowerCase()
+                            .replaceFirst(issueCompleteIgnoreLabelPrefix.toLowerCase(), "");
+                    if (issueIgnoreHash.length() >= specialConditionHashLength) {
+                        try {
+                            String calculatedHash = getHS256(issue.getKey(), specialConditionSecret);
+                            if (calculatedHash.endsWith(issueIgnoreHash)) {
+                                return true;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public void setPrioritizeDown(boolean prioritizeDown) {
@@ -302,6 +320,9 @@ public final class StewardConfig {
     }
 
     boolean isAutoResolveAllowedForStatus(String status) {
+        if (!isStatusTransitionAllowed(status)) {
+            return false;
+        }
         boolean openStatus = true;
         if (autoResolve != null && workflow != null) {
             for (String s : resolvedStatuses) {
@@ -321,6 +342,9 @@ public final class StewardConfig {
     }
 
     boolean isReOpeningAllowedForStatus(String status) {
+        if (!isStatusTransitionAllowed(status)) {
+            return false;
+        }
         if (autoReopen != null && workflow != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
@@ -349,19 +373,23 @@ public final class StewardConfig {
         return false;
     }
 
-    boolean isIssueIgnorable(TrakrIssue issue) {
+    private boolean isStatusTransitionAllowed(String issueStatus) {
         if (ignoreForStatuses != null) {
             for (String status : ignoreForStatuses) {
-                if (status.equalsIgnoreCase(issue.getStatus())) {
+                if (status.equalsIgnoreCase(issueStatus)) {
                     return true;
                 }
             }
         }
-        if (ignoreForLabels != null) {
+        return false;
+    }
+
+    boolean isIssueCompletelyIgnorable(TrakrIssue issue) {
+        if (issue.getLabels() != null) {
             for (String issueLabel : issue.getLabels()) {
-                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith("ignore-")) {
+                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(issueCompleteIgnoreLabelPrefix.toLowerCase())) {
                     String issueIgnoreHash = issueLabel.toLowerCase()
-                            .replaceFirst("ignore-", "");
+                            .replaceFirst(issueCompleteIgnoreLabelPrefix.toLowerCase(), "");
                     if (issueIgnoreHash.length() >= specialConditionHashLength) {
                         try {
                             String calculatedHash = getHS256(issue.getKey(), specialConditionSecret);
@@ -372,14 +400,8 @@ public final class StewardConfig {
                         }
                     }
                 }
-                for (String ignorableLabel : ignoreForLabels) {
-                    if (ignorableLabel.equalsIgnoreCase(issueLabel)) {
-                        return true;
-                    }
-                }
             }
         }
-
         return false;
     }
 

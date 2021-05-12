@@ -110,7 +110,7 @@ public final class Steward {
     private StewardIssueLifeCycle syncIssueWithFinding(TrakrIssue issue, StewardFinding finding)
             throws TrakrException {
         StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
-        if (config.isIssueIgnorable(issue)) {
+        if (config.isIssueCompletelyIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
             issueLifeCycle.setIgnored();
             return issueLifeCycle;
@@ -141,8 +141,8 @@ public final class Steward {
             }
         }
         StringBuilder comment = new StringBuilder();
-        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeDown()))
-                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeUp()))) {
+        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeDown(issue)))
+                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeUp(issue)))) {
             issueBuilder.setPriority(finding.getPriority());
             System.out.println("Prioritizing " + issue.getKey() + " to " + tracker.getPriorityName(finding.getPriority()) + " based on actual priority.");
             comment.append("Prioritizing to **").append(tracker.getPriorityName(finding.getPriority())).append("** based on actual priority.");
@@ -189,7 +189,7 @@ public final class Steward {
 
     private void resolveIssue(StewardIssueLifeCycle issueLifeCycle) throws TrakrException {
         TrakrIssue issue = issueLifeCycle.getIssue();
-        if (config.isIssueIgnorable(issue)) {
+        if (config.isIssueCompletelyIgnorable(issue)) {
             System.out.println("Ignoring the issue: " + issue.getKey());
             issueLifeCycle.setIgnored();
             return;
