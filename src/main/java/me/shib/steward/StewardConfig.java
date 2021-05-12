@@ -279,7 +279,7 @@ public final class StewardConfig {
     }
 
     boolean isPrioritizeUp(TrakrIssue issue) {
-        return this.prioritizeUp || isPriorityChangeAllowed(issue);
+        return this.prioritizeUp && !isPriorityChangeIgnored(issue);
     }
 
     public void setPrioritizeUp(boolean prioritizeUp) {
@@ -287,10 +287,10 @@ public final class StewardConfig {
     }
 
     boolean isPrioritizeDown(TrakrIssue issue) {
-        return this.prioritizeDown || isPriorityChangeAllowed(issue);
+        return this.prioritizeDown && !isPriorityChangeIgnored(issue);
     }
 
-    private boolean isPriorityChangeAllowed(TrakrIssue issue) {
+    private boolean isPriorityChangeIgnored(TrakrIssue issue) {
         if (issue.getLabels() != null) {
             for (String issueLabel : issue.getLabels()) {
                 if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(issuePriorityIgnoreLabelPrefix.toLowerCase())) {
