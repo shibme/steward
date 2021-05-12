@@ -17,7 +17,7 @@ public final class StewardConfig {
     static transient final String autoResolvingNotificationComment = "Auto resolving this issue.";
     static transient final String closingNotificationComment = "Closing this issue after verification.";
     static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
-    private static transient final int ignoreIssueHashLength = 8;
+    private static transient final int specialConditionHashLength = 8;
     private String projectKey;
     private String issueType;
     private Map<TrakrPriority, String> priorityMap;
@@ -37,7 +37,7 @@ public final class StewardConfig {
     private String reOpenStatus;
     private List<String> resolvedStatuses;
     private List<String> closedStatuses;
-    private String ignoreIssueSecret;
+    private String specialConditionSecret;
     private List<String> ignoreForLabels;
     private List<String> ignoreForStatuses;
     private Changes autoReopen;
@@ -150,8 +150,8 @@ public final class StewardConfig {
         this.resolvedStatuses = resolvedStatuses;
     }
 
-    public void setIgnoreIssueSecret(String ignoreIssueSecret) {
-        this.ignoreIssueSecret = ignoreIssueSecret;
+    public void setSpecialConditionSecret(String specialConditionSecret) {
+        this.specialConditionSecret = specialConditionSecret;
     }
 
     public void setIgnoreForLabels(List<String> ignoreForLabels) {
@@ -336,6 +336,19 @@ public final class StewardConfig {
         return false;
     }
 
+    private boolean isSpecialConditionMatching(String issueKey, String labelHash) {
+        if (specialConditionSecret != null && labelHash.length() >= specialConditionHashLength) {
+            try {
+                String calculatedHash = getHS256(issueKey, specialConditionSecret);
+                if (calculatedHash.endsWith(labelHash)) {
+                    return true;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return false;
+    }
+
     boolean isIssueIgnorable(TrakrIssue issue) {
         if (ignoreForStatuses != null) {
             for (String status : ignoreForStatuses) {
@@ -346,12 +359,12 @@ public final class StewardConfig {
         }
         if (ignoreForLabels != null) {
             for (String issueLabel : issue.getLabels()) {
-                if (ignoreIssueSecret != null && issueLabel.toLowerCase().startsWith("ignore-")) {
+                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith("ignore-")) {
                     String issueIgnoreHash = issueLabel.toLowerCase()
                             .replaceFirst("ignore-", "");
-                    if (issueIgnoreHash.length() >= ignoreIssueHashLength) {
+                    if (issueIgnoreHash.length() >= specialConditionHashLength) {
                         try {
-                            String calculatedHash = getHS256(issue.getKey(), ignoreIssueSecret);
+                            String calculatedHash = getHS256(issue.getKey(), specialConditionSecret);
                             if (calculatedHash.endsWith(issueIgnoreHash)) {
                                 return true;
                             }
