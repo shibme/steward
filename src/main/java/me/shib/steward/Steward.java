@@ -141,8 +141,8 @@ public final class Steward {
             }
         }
         StringBuilder comment = new StringBuilder();
-        if (issue.getPriority() == null || ((issue.getPriority().getRank() < finding.getPriority().getRank()) && (config.isPrioritizeDown(issue)))
-                || ((issue.getPriority().getRank() > finding.getPriority().getRank()) && (config.isPrioritizeUp(issue)))) {
+        if (!config.isPriorityChangeIgnored(issue) && (issue.getPriority() == null || (issue.getPriority().getRank() < finding.getPriority().getRank() && config.isPrioritizeDown())
+                || (issue.getPriority().getRank() > finding.getPriority().getRank() && config.isPrioritizeUp()))) {
             issueBuilder.setPriority(finding.getPriority());
             System.out.println("Prioritizing " + issue.getKey() + " to " + tracker.getPriorityName(finding.getPriority()) + " based on actual priority.");
             comment.append("Prioritizing to **").append(tracker.getPriorityName(finding.getPriority())).append("** based on actual priority.");
@@ -273,7 +273,7 @@ public final class Steward {
                     moveStatus.setStatus(transitions.get(i));
                     tracker.updateIssue(issue, moveStatus);
                 }
-                System.out.println(consoleLog.toString());
+                System.out.println(consoleLog);
                 return true;
             }
         } catch (Exception e) {

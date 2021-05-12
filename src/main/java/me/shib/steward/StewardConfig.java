@@ -17,8 +17,8 @@ public final class StewardConfig {
     static transient final String autoResolvingNotificationComment = "Auto resolving this issue.";
     static transient final String closingNotificationComment = "Closing this issue after verification.";
     static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
-    private static transient final String issueCompleteIgnoreLabelPrefix = "Ignore-";
-    private static transient final String issuePriorityIgnoreLabelPrefix = "IgnorePriority-";
+    private static transient final String issueCompleteIgnoreLabelPrefix = "Ignore";
+    private static transient final String issuePriorityIgnoreLabelPrefix = "IgnorePriority";
     private static transient final int specialConditionHashLength = 8;
     private String projectKey;
     private String issueType;
@@ -278,41 +278,24 @@ public final class StewardConfig {
         this.updateDescription = updateDescription;
     }
 
-    boolean isPrioritizeUp(TrakrIssue issue) {
-        return this.prioritizeUp && !isPriorityChangeIgnored(issue);
+    boolean isPrioritizeUp() {
+        return this.prioritizeUp;
     }
 
     public void setPrioritizeUp(boolean prioritizeUp) {
         this.prioritizeUp = prioritizeUp;
     }
 
-    boolean isPrioritizeDown(TrakrIssue issue) {
-        return this.prioritizeDown && !isPriorityChangeIgnored(issue);
-    }
-
-    private boolean isPriorityChangeIgnored(TrakrIssue issue) {
-        if (issue.getLabels() != null) {
-            for (String issueLabel : issue.getLabels()) {
-                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(issuePriorityIgnoreLabelPrefix.toLowerCase())) {
-                    String issueIgnoreHash = issueLabel.toLowerCase()
-                            .replaceFirst(issueCompleteIgnoreLabelPrefix.toLowerCase(), "");
-                    if (issueIgnoreHash.length() >= specialConditionHashLength) {
-                        try {
-                            String calculatedHash = getHS256(issue.getKey(), specialConditionSecret);
-                            if (calculatedHash.endsWith(issueIgnoreHash)) {
-                                return true;
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+    boolean isPrioritizeDown() {
+        return this.prioritizeDown;
     }
 
     public void setPrioritizeDown(boolean prioritizeDown) {
         this.prioritizeDown = prioritizeDown;
+    }
+
+    boolean isPriorityChangeIgnored(TrakrIssue issue) {
+        return isIgnoreLabelExists(issue, issuePriorityIgnoreLabelPrefix);
     }
 
     boolean isAutoResolveAllowed() {
@@ -360,19 +343,6 @@ public final class StewardConfig {
         return false;
     }
 
-    private boolean isSpecialConditionMatching(String issueKey, String labelHash) {
-        if (specialConditionSecret != null && labelHash.length() >= specialConditionHashLength) {
-            try {
-                String calculatedHash = getHS256(issueKey, specialConditionSecret);
-                if (calculatedHash.endsWith(labelHash)) {
-                    return true;
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        return false;
-    }
-
     private boolean isStatusTransitionAllowed(String issueStatus) {
         if (ignoreForStatuses != null) {
             for (String status : ignoreForStatuses) {
@@ -384,12 +354,13 @@ public final class StewardConfig {
         return false;
     }
 
-    boolean isIssueCompletelyIgnorable(TrakrIssue issue) {
+    private boolean isIgnoreLabelExists(TrakrIssue issue, String ignoreLabelPrefix) {
+        ignoreLabelPrefix = ignoreLabelPrefix.toLowerCase() + "-";
         if (issue.getLabels() != null) {
             for (String issueLabel : issue.getLabels()) {
-                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(issueCompleteIgnoreLabelPrefix.toLowerCase())) {
+                if (specialConditionSecret != null && issueLabel.toLowerCase().startsWith(ignoreLabelPrefix)) {
                     String issueIgnoreHash = issueLabel.toLowerCase()
-                            .replaceFirst(issueCompleteIgnoreLabelPrefix.toLowerCase(), "");
+                            .replaceFirst(ignoreLabelPrefix, "");
                     if (issueIgnoreHash.length() >= specialConditionHashLength) {
                         try {
                             String calculatedHash = getHS256(issue.getKey(), specialConditionSecret);
@@ -403,6 +374,10 @@ public final class StewardConfig {
             }
         }
         return false;
+    }
+
+    boolean isIssueCompletelyIgnorable(TrakrIssue issue) {
+        return isIgnoreLabelExists(issue, issueCompleteIgnoreLabelPrefix);
     }
 
     String getProjectKey() {
