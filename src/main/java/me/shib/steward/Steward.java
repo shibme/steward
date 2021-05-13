@@ -100,8 +100,7 @@ public final class Steward {
         issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
         issueBuilder.setLabels(new ArrayList<>(labels));
         TrakrIssue issue = tracker.createIssue(issueBuilder);
-        System.out.println("Created new issue: " + issue.getKey() + " - " + issue.getTitle() + " with priority "
-                + issue.getPriority());
+        System.out.println("Created new issue: " + issue.getKey());
         StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
         issueLifeCycle.setCreated();
         return issueLifeCycle;
@@ -158,11 +157,9 @@ public final class Steward {
         if (config.isReOpeningAllowedForStatus(issue.getStatus())) {
             reopenIssue(issueLifeCycle);
         } else if (issueLifeCycle.isUpdated()) {
-            System.out.println("Updated the issue: " + issue.getKey() + " - "
-                    + issue.getTitle());
+            System.out.println("Updated the issue: " + issue);
         } else {
-            System.out.println("Issue up-to date: " + issue.getKey() + " - "
-                    + issue.getTitle());
+            System.out.println("Issue up-to date: " + issue);
         }
         return issueLifeCycle;
     }
