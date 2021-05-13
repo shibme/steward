@@ -36,6 +36,7 @@ enum StewardEnvar {
     STEWARD_AUTO_REOPEN_AFTER("Days after which auto-reopen should work [Default 0]"),
     STEWARD_AUTO_REOPEN_TRANSITION("Transition issues to reopened status if required [TRUE|FALSE]"),
     STEWARD_AUTO_REOPEN_COMMENT("Comment on issues to reopen if required [TRUE|FALSE]"),
+    STEWARD_AUTO_RESOLVE_IGNORED("Auto resolves issues that are in ignored statuses"),
     STEWARD_AUTO_RESOLVE_AFTER("Days after which auto-resolve should work [Default 7]"),
     STEWARD_AUTO_RESOLVE_TRANSITION("Transition issues to resolved status if required [TRUE|FALSE]"),
     STEWARD_AUTO_RESOLVE_COMMENT("Comment on issues to resolve if required [TRUE|FALSE]");

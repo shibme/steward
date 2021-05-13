@@ -303,29 +303,29 @@ public final class StewardConfig {
     }
 
     boolean isAutoResolveAllowedForStatus(String status) {
-        if (!isStatusTransitionAllowed(status)) {
+        if (isStatusIgnorable(status) && !autoResolve.isIncludeIgnored()) {
             return false;
         }
-        boolean openStatus = true;
+        boolean unresolved = true;
         if (autoResolve != null && workflow != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
-                    openStatus = false;
+                    unresolved = false;
                     break;
                 }
             }
             for (String s : closedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
-                    openStatus = false;
+                    unresolved = false;
                     break;
                 }
             }
         }
-        return openStatus;
+        return unresolved;
     }
 
     boolean isReOpeningAllowedForStatus(String status) {
-        if (!isStatusTransitionAllowed(status)) {
+        if (isStatusIgnorable(status)) {
             return false;
         }
         if (autoReopen != null && workflow != null) {
@@ -343,7 +343,7 @@ public final class StewardConfig {
         return false;
     }
 
-    private boolean isStatusTransitionAllowed(String issueStatus) {
+    private boolean isStatusIgnorable(String issueStatus) {
         if (ignoreForStatuses != null) {
             for (String status : ignoreForStatuses) {
                 if (status.equalsIgnoreCase(issueStatus)) {
@@ -426,12 +426,14 @@ public final class StewardConfig {
         private transient static final long oneDay = 86400000;
 
         private int afterDays;
+        private boolean includeIgnored;
         private boolean transition;
         private boolean comment;
         private int commentInterval;
 
-        public Changes(int afterDays, boolean transition, boolean comment, int commentInterval) {
+        public Changes(int afterDays, boolean includeIgnored, boolean transition, boolean comment, int commentInterval) {
             this.afterDays = afterDays;
+            this.includeIgnored = includeIgnored;
             this.transition = transition;
             this.comment = comment;
             if (commentInterval < 1) {
@@ -443,6 +445,14 @@ public final class StewardConfig {
 
         void setAfterDays(int afterDays) {
             this.afterDays = afterDays;
+        }
+
+        boolean isIncludeIgnored() {
+            return includeIgnored;
+        }
+
+        void setIncludeIgnored(boolean includeIgnored) {
+            this.includeIgnored = includeIgnored;
         }
 
         void setCommentInterval(int commentInterval) {
