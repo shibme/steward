@@ -6,6 +6,6 @@ public final class StewardException extends Exception {
     }
 
     public StewardException(Exception e) {
-        super(e.getMessage(), e.getCause());
+        super(e);
     }
 }
