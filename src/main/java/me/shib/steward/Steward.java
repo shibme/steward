@@ -100,7 +100,7 @@ public final class Steward {
         issueBuilder.setDescription(new TrakrContent(finding.getDescription()));
         issueBuilder.setLabels(new ArrayList<>(labels));
         TrakrIssue issue = tracker.createIssue(issueBuilder);
-        System.out.println("Created new issue: " + issue.getKey());
+        System.out.println("Created new issue: " + issue);
         StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
         issueLifeCycle.setCreated();
         return issueLifeCycle;
