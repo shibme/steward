@@ -186,12 +186,12 @@ public final class Steward {
 
     private void resolveIssue(StewardIssueLifeCycle issueLifeCycle) throws TrakrException {
         TrakrIssue issue = issueLifeCycle.getIssue();
-        if (config.isIssueCompletelyIgnorable(issue)) {
-            System.out.println("Ignoring the issue: " + issue.getKey());
+        if (!config.isAutoResolveAllowedForStatus(issue.getStatus())) {
+            System.out.println("Ignoring auto-resolution for the issue: " + issue.getKey());
             issueLifeCycle.setIgnored();
             return;
         }
-        System.out.println("Issue: " + issue.getKey() + " has been fixed.");
+        System.out.println("Issue: " + issue.getKey() + " was found to be fixed, but hasn't been moved to resolved.");
         boolean transitioned = false;
         String originalStatus = issue.getStatus();
         if (config.getAutoResolve().isTransition(issue)) {
@@ -326,8 +326,8 @@ public final class Steward {
                 List<TrakrIssue> issues = tracker.searchTrakrIssues(searchQuery);
                 int count = 0;
                 for (TrakrIssue issue : issues) {
-                    if (config.isAutoResolveAllowedForStatus(issue.getStatus())) {
-                        StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, false);
+                    StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, false);
+                    if (!config.isIssueCompletelyIgnorable(issue)) {
                         try {
                             if (!isVulnerabilityExists(issue, data.getFindings())) {
                                 count++;
@@ -340,6 +340,8 @@ public final class Steward {
                             e.printStackTrace();
                             issueLifeCycle.addException(e);
                         }
+                    } else {
+                        issueLifeCycle.setIgnored();
                     }
                 }
                 if (count == 0) {
