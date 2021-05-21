@@ -232,10 +232,13 @@ public final class StewardConfig {
         if (forwardStatuses == null) {
             System.out.println("Unable to find transitions for status: " + fromStatus);
         }
-        for (String status : workflow.get(fromStatus)) {
-            List<String> current = getTransitionPath(new ArrayList<>(path), status, toStatuses);
-            if (current.size() > 0 && toStatuses.contains(current.get(current.size() - 1))) {
-                temp.add(current);
+        List<String> to = workflow.get(fromStatus);
+        if (to != null) {
+            for (String status : to) {
+                List<String> current = getTransitionPath(new ArrayList<>(path), status, toStatuses);
+                if (current.size() > 0 && toStatuses.contains(current.get(current.size() - 1))) {
+                    temp.add(current);
+                }
             }
         }
         int minSize = 0;
