@@ -333,7 +333,7 @@ public final class Steward {
                                 count++;
                                 resolveIssue(issueLifeCycle);
                                 if (!issueLifeCycle.isResolved()) {
-                                    System.out.println(issue.getKey() + ": Not Resolved.");
+                                    System.out.println(issue.getKey() + ": Auto-resolution was not done.");
                                 }
                             }
                         } catch (Exception e) {
