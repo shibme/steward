@@ -192,7 +192,7 @@ class StewardConfigBuilder {
                     (0, false, false, false, 0);
         }
         Integer autoReopenAfter = StewardEnvar.STEWARD_AUTO_REOPEN_AFTER.getAsInteger();
-        if (autoReopenAfter != null && autoReopenAfter > 0) {
+        if (autoReopenAfter != null && autoReopenAfter >= 0) {
             autoReopen.setAfterDays(autoReopenAfter);
         }
         if (StewardEnvar.STEWARD_AUTO_REOPEN_TRANSITION.getAsBoolean()) {
@@ -206,10 +206,10 @@ class StewardConfigBuilder {
         StewardConfig.Changes autoResolve = config.getAutoResolve();
         if (autoResolve == null) {
             autoResolve = new StewardConfig.Changes
-                    (7, false, false, false, 0);
+                    (0, false, false, false, 0);
         }
         Integer autoResolveAfter = StewardEnvar.STEWARD_AUTO_RESOLVE_AFTER.getAsInteger();
-        if (autoResolveAfter != null && autoResolveAfter > 0) {
+        if (autoResolveAfter != null && autoResolveAfter >= 0) {
             autoResolve.setAfterDays(autoResolveAfter);
         }
         if (StewardEnvar.STEWARD_AUTO_RESOLVE_IGNORED.getAsBoolean()) {
