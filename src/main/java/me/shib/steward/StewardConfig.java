@@ -306,29 +306,26 @@ public final class StewardConfig {
     }
 
     boolean isAutoResolveAllowedForStatus(String status) {
-        if (isStatusIgnorable(status) && !autoResolve.isIncludeIgnored()) {
+        if (isStatusIgnorable(status) && (autoResolve == null || !autoResolve.isIncludeIgnored())) {
             return false;
         }
-        boolean unresolved = true;
         if (autoResolve != null && workflow != null) {
             for (String s : resolvedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
-                    unresolved = false;
-                    break;
+                    return false;
                 }
             }
             for (String s : closedStatuses) {
                 if (s.equalsIgnoreCase(status)) {
-                    unresolved = false;
-                    break;
+                    return false;
                 }
             }
         }
-        return unresolved;
+        return true;
     }
 
     boolean isReOpeningAllowedForStatus(String status) {
-        if (isStatusIgnorable(status)) {
+        if (isStatusIgnorable(status) && (autoReopen == null || !autoReopen.isIncludeIgnored())) {
             return false;
         }
         if (autoReopen != null && workflow != null) {
