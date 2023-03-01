@@ -26,8 +26,10 @@ public final class Steward {
                     data.getToolName() + "]: " + data.getFindings().size());
             if (config != null) {
                 Steward steward = new Steward(data, config, executionResult);
-                steward.resolveNonExistantFindings();
-                steward.processExistingFindings();
+                steward.autoResolveIssuesNotInFindings();
+                if (!config.isFindingsToIssuesSyncDisabled()) {
+                    steward.syncFindingsToIssues();
+                }
                 executionResult.summarizeCount();
                 Integer exitCode = null;
                 if (executionResult.getExceptions().size() > 0 && config.getExitCodeOnFailure() != null) {
@@ -106,7 +108,7 @@ public final class Steward {
         return issueLifeCycle;
     }
 
-    private StewardIssueLifeCycle syncIssueWithFinding(TrakrIssue issue, StewardFinding finding)
+    private StewardIssueLifeCycle syncFindingIntoIssue(TrakrIssue issue, StewardFinding finding)
             throws TrakrException {
         StewardIssueLifeCycle issueLifeCycle = new StewardIssueLifeCycle(issue, true);
         if (config.isIssueCompletelyIgnorable(issue)) {
@@ -164,20 +166,20 @@ public final class Steward {
         return issueLifeCycle;
     }
 
-    private List<String> toLowerCaseList(Collection<String> list) {
-        List<String> lowerCaseList = new ArrayList<>();
+    private Set<String> toLowerCaseSet(Collection<String> list) {
+        Set<String> lowerCaseSet = new HashSet<>();
         for (String item : list) {
             if (item != null) {
-                lowerCaseList.add(item.toLowerCase());
+                lowerCaseSet.add(item.toLowerCase());
             }
         }
-        return lowerCaseList;
+        return lowerCaseSet;
     }
 
     private boolean isVulnerabilityExists(TrakrIssue issue, List<StewardFinding> findings) {
-        List<String> lowerCaseIssueLabelsList = toLowerCaseList(issue.getLabels());
+        Set<String> lowerCaseIssueLabelsList = toLowerCaseSet(issue.getLabels());
         for (StewardFinding finding : findings) {
-            if (lowerCaseIssueLabelsList.containsAll(toLowerCaseList(finding.getContexts()))) {
+            if (lowerCaseIssueLabelsList.containsAll(toLowerCaseSet(finding.getContexts()))) {
                 return true;
             }
         }
@@ -279,7 +281,7 @@ public final class Steward {
         return false;
     }
 
-    private StewardIssueLifeCycle processFinding(StewardFinding finding) throws StewardException, TrakrException {
+    private StewardIssueLifeCycle syncFinding(StewardFinding finding) throws StewardException, TrakrException {
         StewardIssueLifeCycle issueLifeCycle;
         TrakrQuery searchQuery = new TrakrQuery(TrakrQuery.Condition.type, TrakrQuery.Operator.matching, config.getIssueType());
         searchQuery.add(TrakrQuery.Condition.label, TrakrQuery.Operator.matching, data.getProjectName());
@@ -291,7 +293,7 @@ public final class Steward {
         if (issues.size() == 0) {
             issueLifeCycle = createIssueForFinding(finding);
         } else if (issues.size() == 1) {
-            issueLifeCycle = syncIssueWithFinding(issues.get(0), finding);
+            issueLifeCycle = syncFindingIntoIssue(issues.get(0), finding);
         } else {
             throw new StewardException("More than one issue listed:\n"
                     + "Labels: " + Arrays.toString(finding.getContexts().toArray()) + "\n"
@@ -300,11 +302,11 @@ public final class Steward {
         return issueLifeCycle;
     }
 
-    private void processExistingFindings() {
+    private void syncFindingsToIssues() {
         System.out.println("\nProcessing scanned results...");
         for (StewardFinding finding : data.getFindings()) {
             try {
-                executionResult.addIssueLifeCycle(processFinding(finding));
+                executionResult.addIssueLifeCycle(syncFinding(finding));
             } catch (StewardException | TrakrException e) {
                 e.printStackTrace();
                 executionResult.addException(e);
@@ -312,7 +314,7 @@ public final class Steward {
         }
     }
 
-    private void resolveNonExistantFindings() throws StewardException {
+    private void autoResolveIssuesNotInFindings() throws StewardException {
         try {
             if (config.isAutoResolveAllowed()) {
                 System.out.println("\nVerifying if any existing issues are fixed...");

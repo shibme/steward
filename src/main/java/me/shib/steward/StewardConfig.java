@@ -10,16 +10,16 @@ import java.util.*;
 
 public final class StewardConfig {
 
-    static transient final String issueFixedComment = "This issue has been fixed.";
-    static transient final String issueNotFixedComment = "Found that the issue is still not fixed.";
-    static transient final String resolveRequestComment = "Please resolve this issue.";
-    static transient final String reopenRequestComment = "Please reopen this issue.";
-    static transient final String autoResolvingNotificationComment = "Auto resolving this issue.";
-    static transient final String closingNotificationComment = "Closing this issue after verification.";
-    static transient final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
-    private static transient final String issueCompleteIgnoreLabelPrefix = "Ignore";
-    private static transient final String issuePriorityIgnoreLabelPrefix = "IgnorePriority";
-    private static transient final int specialConditionHashLength = 8;
+    static final String issueFixedComment = "This issue has been fixed.";
+    static final String issueNotFixedComment = "Found that the issue is still not fixed.";
+    static final String resolveRequestComment = "Please resolve this issue.";
+    static final String reopenRequestComment = "Please reopen this issue.";
+    static final String autoResolvingNotificationComment = "Auto resolving this issue.";
+    static final String closingNotificationComment = "Closing this issue after verification.";
+    static final String reopeningNotificationComment = "Reopening this issue as it is not fixed.";
+    private static final String issueCompleteIgnoreLabelPrefix = "Ignore";
+    private static final String issuePriorityIgnoreLabelPrefix = "IgnorePriority";
+    private static final int specialConditionHashLength = 8;
     private String projectKey;
     private String issueType;
     private Map<TrakrPriority, String> priorityMap;
@@ -43,6 +43,7 @@ public final class StewardConfig {
     private List<String> ignoreForStatuses;
     private Changes autoReopen;
     private Changes autoResolve;
+    private boolean findingsToIssuesSyncDisabled;
 
     public StewardConfig(String projectKey, String issueType, Map<TrakrPriority, String> priorityMap,
                          Trakr.Type trackerName, Trakr.Connection connection) throws StewardException {
@@ -62,6 +63,7 @@ public final class StewardConfig {
         this.updateLabels = false;
         this.prioritizeUp = false;
         this.prioritizeDown = false;
+        this.findingsToIssuesSyncDisabled = false;
     }
 
     public static StewardConfig getConfig() {
@@ -420,10 +422,18 @@ public final class StewardConfig {
         this.updateLabels = updateLabels;
     }
 
+    boolean isFindingsToIssuesSyncDisabled() {
+        return findingsToIssuesSyncDisabled;
+    }
+
+    public void setFindingsToIssuesSyncDisabled(boolean findingsToIssuesSyncDisabled) {
+        this.findingsToIssuesSyncDisabled = findingsToIssuesSyncDisabled;
+    }
+
     public static class Changes {
 
-        private transient static final int defaultCommentInterval = 30;
-        private transient static final long oneDay = 86400000;
+        private static final int defaultCommentInterval = 30;
+        private static final long oneDay = 86400000;
 
         private int afterDays;
         private boolean includeIgnored;

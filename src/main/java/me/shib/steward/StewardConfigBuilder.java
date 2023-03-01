@@ -14,8 +14,8 @@ import java.util.Map;
 
 class StewardConfigBuilder {
 
-    private static transient final Gson gson = new GsonBuilder().create();
-    private static transient final Map<String, StewardConfig> configMap = new HashMap<>();
+    private static final Gson gson = new GsonBuilder().create();
+    private static final Map<String, StewardConfig> configMap = new HashMap<>();
 
     private static String getConfigFromURL(String configURL) throws IOException {
         StringBuilder result = new StringBuilder();
@@ -132,9 +132,7 @@ class StewardConfigBuilder {
             }
         }
         config.setConnection(connection);
-        if (StewardEnvar.STEWARD_DRY_RUN.getAsBoolean()) {
-            config.setDryRun(true);
-        }
+        config.setDryRun(StewardEnvar.STEWARD_DRY_RUN.getAsBoolean());
         Integer exitCodeOnIssues = StewardEnvar.STEWARD_EXIT_CODE_ISSUES.getAsInteger();
         if (exitCodeOnIssues != null && exitCodeOnIssues >= 0) {
             config.setExitCodeOnIssues(exitCodeOnIssues);
@@ -147,21 +145,11 @@ class StewardConfigBuilder {
         if (exitCodeOnFailure != null && exitCodeOnFailure >= 0) {
             config.setExitCodeOnFailure(exitCodeOnFailure);
         }
-        if (StewardEnvar.STEWARD_UPDATE_TITLE.getAsBoolean()) {
-            config.setUpdateTitle(true);
-        }
-        if (StewardEnvar.STEWARD_UPDATE_DESCRIPTION.getAsBoolean()) {
-            config.setUpdateDescription(true);
-        }
-        if (StewardEnvar.STEWARD_UPDATE_LABELS.getAsBoolean()) {
-            config.setUpdateLabels(true);
-        }
-        if (StewardEnvar.STEWARD_PRIORITIZE_UP.getAsBoolean()) {
-            config.setPrioritizeUp(true);
-        }
-        if (StewardEnvar.STEWARD_PRIORITIZE_DOWN.getAsBoolean()) {
-            config.setPrioritizeDown(true);
-        }
+        config.setUpdateTitle(StewardEnvar.STEWARD_UPDATE_TITLE.getAsBoolean());
+        config.setUpdateDescription(StewardEnvar.STEWARD_UPDATE_DESCRIPTION.getAsBoolean());
+        config.setUpdateLabels(StewardEnvar.STEWARD_UPDATE_LABELS.getAsBoolean());
+        config.setPrioritizeUp(StewardEnvar.STEWARD_PRIORITIZE_UP.getAsBoolean());
+        config.setPrioritizeDown(StewardEnvar.STEWARD_PRIORITIZE_DOWN.getAsBoolean());
         String assignee = StewardEnvar.STEWARD_ASSIGNEE.getAsString();
         if (assignee != null) {
             config.setAssignee(assignee);
@@ -195,12 +183,8 @@ class StewardConfigBuilder {
         if (autoReopenAfter != null && autoReopenAfter >= 0) {
             autoReopen.setAfterDays(autoReopenAfter);
         }
-        if (StewardEnvar.STEWARD_AUTO_REOPEN_TRANSITION.getAsBoolean()) {
-            autoReopen.setTransition(true);
-        }
-        if (StewardEnvar.STEWARD_AUTO_REOPEN_COMMENT.getAsBoolean()) {
-            autoReopen.setComment(true);
-        }
+        autoReopen.setTransition(StewardEnvar.STEWARD_AUTO_REOPEN_TRANSITION.getAsBoolean());
+        autoReopen.setComment(StewardEnvar.STEWARD_AUTO_REOPEN_COMMENT.getAsBoolean());
         config.setAutoReopen(autoReopen);
 
         StewardConfig.Changes autoResolve = config.getAutoResolve();
@@ -212,16 +196,11 @@ class StewardConfigBuilder {
         if (autoResolveAfter != null && autoResolveAfter >= 0) {
             autoResolve.setAfterDays(autoResolveAfter);
         }
-        if (StewardEnvar.STEWARD_AUTO_RESOLVE_IGNORED.getAsBoolean()) {
-            autoResolve.setIncludeIgnored(true);
-        }
-        if (StewardEnvar.STEWARD_AUTO_RESOLVE_TRANSITION.getAsBoolean()) {
-            autoResolve.setTransition(true);
-        }
-        if (StewardEnvar.STEWARD_AUTO_RESOLVE_COMMENT.getAsBoolean()) {
-            autoResolve.setComment(true);
-        }
+        autoResolve.setIncludeIgnored(StewardEnvar.STEWARD_AUTO_RESOLVE_IGNORED.getAsBoolean());
+        autoResolve.setTransition(StewardEnvar.STEWARD_AUTO_RESOLVE_TRANSITION.getAsBoolean());
+        autoResolve.setComment(StewardEnvar.STEWARD_AUTO_RESOLVE_COMMENT.getAsBoolean());
         config.setAutoResolve(autoResolve);
+        config.setFindingsToIssuesSyncDisabled(StewardEnvar.STEWARD_DISABLE_FINDINGS_TO_ISSUES_SYNC.getAsBoolean());
     }
 
 }

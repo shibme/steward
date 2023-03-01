@@ -39,7 +39,8 @@ enum StewardEnvar {
     STEWARD_AUTO_RESOLVE_IGNORED("Auto resolves issues that are in ignored statuses"),
     STEWARD_AUTO_RESOLVE_AFTER("Days after which auto-resolve should work [Default 7]"),
     STEWARD_AUTO_RESOLVE_TRANSITION("Transition issues to resolved status if required [TRUE|FALSE]"),
-    STEWARD_AUTO_RESOLVE_COMMENT("Comment on issues to resolve if required [TRUE|FALSE]");
+    STEWARD_AUTO_RESOLVE_COMMENT("Comment on issues to resolve if required [TRUE|FALSE]"),
+    STEWARD_DISABLE_FINDINGS_TO_ISSUES_SYNC("Disable sync for findings discovered in current scan [TRUE|FALSE]");
 
     private final transient String description;
 

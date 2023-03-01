@@ -10,7 +10,7 @@ import java.util.Random;
 
 final class DummyIssue extends TrakrIssue {
 
-    private static final transient Random rand = new Random();
+    private static final Random rand = new Random();
 
     private transient String projectKey;
     private transient String key;
